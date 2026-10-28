@@ -1621,6 +1621,14 @@ Kind of a healthcheck.
 - `.http` = `"http"`
 - `.keyword` = `"keyword"`
 
+## `HoneypotListToken` (struct)
+
+The personal list token for the live version of the v64 Blocklist. Treat the token as a secret.
+
+- `token: String` – The token (32 alphanumeric characters).
+- `live: Bool` – The account may use the live list right now; otherwise the URL serves the daily list.
+- `base: String` – Base URL; append a list file name such as `ipv64_blocklist_v64.txt`.
+
 ## `HoneypotReport` (struct)
 
 A report from a Honeypot64 sensor (request body of `IPv64/Honeypot/submitReport(_:)`).

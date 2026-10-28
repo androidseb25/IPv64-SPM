@@ -215,6 +215,67 @@ struct HC2Tests {
         #expect(del.lastRequest?.relativePath == "/hc2/channels/7")
     }
 
+    @Test("Channels: send verification code")
+    func sendVerificationCode() async throws {
+        let transport = MockTransport(json: #"{"data":{"sent":true}}"#)
+        let result = try await IPv64.mock(transport).hc2.channels.sendVerificationCode(7)
+        #expect(result == ["sent": true])
+        let request = try #require(transport.lastRequest)
+        #expect(request.httpMethod == "POST")
+        #expect(request.relativePath == "/hc2/channels/7/verify/send")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-key")
+        #expect(request.httpBody == nil)
+
+        let verified = MockTransport(json: #"{"verified":true}"#)
+        #expect(try await IPv64.mock(verified).hc2.channels.sendVerificationCode(7)["verified"] == true)
+
+        let empty = MockTransport(status: 200, body: Data())
+        #expect(try await IPv64.mock(empty).hc2.channels.sendVerificationCode(7) == .null)
+
+        let limited = MockTransport(status: 429, json: """
+        {"type":"about:blank","title":"Too Many Requests","status":429,"code":"rate_limited","detail":"slow","retry_after":600}
+        """)
+        do {
+            _ = try await IPv64.mock(limited).hc2.channels.sendVerificationCode(7)
+            Issue.record("expected an error")
+        } catch let IPv64Error.api(problem) {
+            #expect(problem.status == 429)
+            #expect(problem.retryAfter == 600)
+        }
+    }
+
+    @Test("Channels: verify with code")
+    func verifyChannel() async throws {
+        let transport = MockTransport(json: #"{"data":{"verified":true}}"#)
+        let result = try await IPv64.mock(transport).hc2.channels.verify(7, code: "123456")
+        #expect(result == ["verified": true])
+        let request = try #require(transport.lastRequest)
+        #expect(request.httpMethod == "POST")
+        #expect(request.relativePath == "/hc2/channels/7/verify")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-key")
+        #expect(request.jsonBody == ["code": "123456"])
+
+        let plain = MockTransport(json: #"{"verified":true}"#)
+        #expect(try await IPv64.mock(plain).hc2.channels.verify(7, code: "123456")["verified"] == true)
+
+        let empty = MockTransport(status: 200, body: Data())
+        #expect(try await IPv64.mock(empty).hc2.channels.verify(7, code: "123456") == .null)
+    }
+
+    @Test("Channels: wrong code becomes invalid_code")
+    func verifyInvalidCode() async throws {
+        let transport = MockTransport(status: 422, json: """
+        {"type":"about:blank","title":"Unprocessable Entity","status":422,"code":"invalid_code","detail":"Wrong or expired code"}
+        """)
+        do {
+            _ = try await IPv64.mock(transport).hc2.channels.verify(7, code: "000000")
+            Issue.record("expected an error")
+        } catch let IPv64Error.api(problem) {
+            #expect(problem.code == "invalid_code")
+            #expect(problem.status == 422)
+        }
+    }
+
     @Test("Maintenance windows encode dates")
     func maintenance() async throws {
         let transport = MockTransport(status: 201, json: """

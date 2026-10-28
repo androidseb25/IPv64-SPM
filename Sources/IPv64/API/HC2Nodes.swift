@@ -27,13 +27,7 @@ extension IPv64.HC2 {
         ///
         /// `GET /node64/nodes`
         public func containers() async throws -> JSONValue {
-            let (data, _) = try await client.perform(Request(.get, "/node64/nodes"))
-            if data.isEmpty { return .null }
-            do {
-                return try IPv64Coding.makeDecoder().decode(JSONValue.self, from: data)
-            } catch {
-                throw IPv64Error.decoding(error, body: data)
-            }
+            try await client.sendRawJSON(Request(.get, "/node64/nodes"))
         }
 
         /// Lists nodes.

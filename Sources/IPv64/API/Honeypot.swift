@@ -30,6 +30,18 @@ extension IPv64 {
             try await client.send(Request(.get, "/honeypot/sensors"))
         }
 
+        /// The personal list token for the live version of the v64 Blocklist.
+        ///
+        /// Creates the token if it is missing and keeps an existing one. The full list URL is ``HoneypotListToken/base``
+        /// plus a list file name, e.g. `ipv64_blocklist_v64.txt`. If ``HoneypotListToken/live`` is `false`
+        /// (plan class Standard and not a contributor), that URL serves the daily list (header `X-IPv64-List: daily`).
+        /// The token is a secret: do not log it.
+        ///
+        /// `GET /honeypot/list-token`
+        public func listToken() async throws -> HoneypotListToken {
+            try await client.send(Request(.get, "/honeypot/list-token"))
+        }
+
         /// The account's own contribution: events and distinct source IPs over 24 hours and 7 days, top kinds
         /// and ports (7 days) and a per-day timeline (UTC, 7 days).
         ///

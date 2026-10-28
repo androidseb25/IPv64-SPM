@@ -109,6 +109,39 @@ struct HoneypotTests {
         #expect(stats.timeline?.first?.day == "2026-10-19")
     }
 
+    @Test("GET /honeypot/list-token decodes the token")
+    func listToken() async throws {
+        let transport = MockTransport(json: """
+        {"data":{"token":"abcdefghijklmnopqrstuvwxyz012345","live":false,"base":"https://ipv64.net/blocklists/live/abcdefghijklmnopqrstuvwxyz012345/"}}
+        """)
+        let result = try await IPv64.mock(transport).honeypot.listToken()
+
+        #expect(result.token == "abcdefghijklmnopqrstuvwxyz012345")
+        #expect(result.live == false)
+        #expect(result.base.hasSuffix("/"))
+        let request = try #require(transport.lastRequest)
+        #expect(request.httpMethod == "GET")
+        #expect(request.relativePath == "/honeypot/list-token")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-key")
+        #expect(request.httpBody == nil)
+    }
+
+    @Test("GET /honeypot/list-token sends the act-as header and needs a key")
+    func listTokenActAs() async throws {
+        let transport = MockTransport(json: #"{"data":{"token":"t","live":true,"base":"https://x/"}}"#)
+        _ = try await IPv64.mock(transport, actAs: "kunde@example.com").honeypot.listToken()
+        #expect(transport.lastRequest?.value(forHTTPHeaderField: "X-IPv64-Act-As") == "kunde@example.com")
+
+        let anonymous = MockTransport(json: "{}")
+        await #expect {
+            try await IPv64(apiKey: nil, transport: anonymous).honeypot.listToken()
+        } throws: { error in
+            guard case IPv64Error.missingAPIKey = error else { return false }
+            return true
+        }
+        #expect(anonymous.requests.isEmpty)
+    }
+
     @Test("Honeypot errors surface the problem code")
     func rateLimited() async throws {
         let transport = MockTransport(status: 429, json: """

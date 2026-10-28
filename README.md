@@ -2,7 +2,7 @@
 
 Swift-Package für die [IPv64.net API v2](https://ipv64.net/api_v2_docs): DynDNS, DNS, Healthchecks (klassisch und 2.0), DNS-Failover, Statusseiten, Offline-Pages, CDN, Cloud Router, Gateways, Peers, DNS64, Honeypot64 und Threat Intelligence.
 
-Das Package deckt alle 189 Endpunkte der OpenAPI-Spezifikation (`https://ipv64.net/api/v2/openapi.json`) ab.
+Das Package deckt alle 192 Endpunkte der OpenAPI-Spezifikation (`https://ipv64.net/api/v2/openapi.json`) ab. Wo die Spec lückenhaft ist und wie der Client damit umgeht, steht in [`docs/IPV64_SPEC_GAPS.md`](docs/IPV64_SPEC_GAPS.md).
 
 Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-Node im eigenen Netz, mit allen 290 Endpunkten (siehe [Node64](#node64)).
 
@@ -14,7 +14,7 @@ Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-
 ## Für KI-Agenten
 
 > **AI coding agents:** read [`AGENTS.md`](AGENTS.md) before integrating this package. It lists the rules and pitfalls, plus recipes for common tasks (the recipes compile in the test target).
-> Exact signatures for all 189 endpoints are in [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md), searchable by HTTP endpoint. Every model with its properties and enum constants is in [`docs/MODELS.md`](docs/MODELS.md).
+> Exact signatures for all 192 endpoints are in [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md), searchable by HTTP endpoint. Every model with its properties and enum constants is in [`docs/MODELS.md`](docs/MODELS.md).
 > For the local node API (`Node64`) use [`docs/NODE64_API_REFERENCE.md`](docs/NODE64_API_REFERENCE.md) and [`docs/NODE64_MODELS.md`](docs/NODE64_MODELS.md), and read the Node64 section of `AGENTS.md`.
 > Do not guess method names or build URLs yourself.
 

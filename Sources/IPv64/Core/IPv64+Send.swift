@@ -45,6 +45,19 @@ extension IPv64 {
         return try decode(Value.self, from: data)
     }
 
+    /// Sends `request` and returns the body as ``JSONValue``.
+    ///
+    /// For endpoints whose 200 response has no documented schema; an empty body yields ``JSONValue/null``.
+    /// With `unwrappingData`, an object body with a `data` member yields that member (the usual envelope);
+    /// any other body is returned whole.
+    func sendRawJSON(_ request: Request, unwrappingData: Bool = false) async throws -> JSONValue {
+        let (data, _) = try await perform(request)
+        if data.isEmpty { return .null }
+        let body = try decode(JSONValue.self, from: data)
+        if unwrappingData, let member = body["data"] { return member }
+        return body
+    }
+
     /// Sends `request` and returns the raw body and response, after error handling.
     ///
     /// `304 Not Modified` counts as success only for conditional requests (`If-None-Match`).

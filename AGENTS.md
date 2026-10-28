@@ -11,6 +11,7 @@ Read this file first, then look up exact signatures instead of guessing them.
 | Every method: Swift call path ↔ HTTP endpoint, signature, summary | [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) |
 | Every model: properties, types, open-enum constants | [`docs/MODELS.md`](docs/MODELS.md) |
 | Recipes as compiling code | [`Tests/IPv64Tests/DocumentationExamples.swift`](Tests/IPv64Tests/DocumentationExamples.swift) |
+| Where the spec is incomplete and how the client handles it | [`docs/IPV64_SPEC_GAPS.md`](docs/IPV64_SPEC_GAPS.md) |
 | Source of truth | `Sources/IPv64/API/*.swift` (one file per area), `Sources/IPv64/Models/**` |
 | Upstream API | https://ipv64.net/api_v2_docs, spec: https://ipv64.net/api/v2/openapi.json |
 
@@ -264,9 +265,17 @@ func poll<Value: Sendable>(
 }
 
 func waitForAsyncResources(ipv64: IPv64) async throws {
-    // Gateway: ready once `state == .ready` (it starts as `.creating`).
+    // Creating a router also creates its first gateway, but the 202 answer may not list it yet.
     let router = try await ipv64.cloudRouters.create(name: "Home Lab")
-    let gateway = try await ipv64.cloudRouters.createGateway(router: router.id, name: "Frankfurt")
+    let routerWithGateway = try await poll {
+        try await ipv64.cloudRouters.get(router.id)
+    } until: { router in
+        !(router.gateways ?? []).isEmpty
+    }
+    guard let gateway = routerWithGateway.gateways?.first else { throw RecipeError.timedOut }
+
+    // Gateway: ready once `state == .ready` (it starts as `.creating`).
+    // Use `cloudRouters.createGateway(router:name:)` only for additional gateways.
     let readyGateway = try await poll {
         try await ipv64.gateways.get(gateway.id)
     } until: { gateway in

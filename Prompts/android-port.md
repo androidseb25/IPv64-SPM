@@ -8,7 +8,7 @@
 
 Baue eine Kotlin-Bibliothek, mit der Android-Apps zwei APIs vollständig nutzen können:
 
-1. die **IPv64.net API v2** (Cloud, 189 Endpunkte, Client-Klasse `IPv64`) und
+1. die **IPv64.net API v2** (Cloud, 192 Endpunkte, Client-Klasse `IPv64`) und
 2. die **lokale API einer Node64-Node** im eigenen Netz (290 Endpunkte, Client-Klasse `Node64`, siehe Abschnitt 5).
 
 Es gibt bereits ein fertiges, getestetes Swift-Package (Swift 6) mit genau diesem Umfang. **Es ist deine Vorlage und Referenz.** Übernimm seine Architektur, Benennung und alle fachlichen Entscheidungen 1:1 in idiomatisches Kotlin. Die Zielgruppen beider Bibliotheken sind dieselben Entwickler und dieselben KI-Agenten, deshalb müssen Namespaces und Methodennamen auf beiden Plattformen gleich heißen.
@@ -22,12 +22,13 @@ Swift-Referenz: `/Users/sebastianrank/Programmierung/XCode/IPv64-SPM`
 | Datei | Inhalt |
 |---|---|
 | `AGENTS.md` | 12 Regeln, Stolperfallen, 13 Rezepte. **Komplett lesen.** |
-| `docs/API_REFERENCE.md` | Alle 189 Endpunkte: Swift-Aufrufpfad ↔ HTTP-Endpunkt, Signatur, Beschreibung |
+| `docs/API_REFERENCE.md` | Alle 192 Endpunkte: Swift-Aufrufpfad ↔ HTTP-Endpunkt, Signatur, Beschreibung |
 | `docs/MODELS.md` | Alle Modelle mit Feldern, Typen, Enum-Konstanten |
+| `docs/IPV64_SPEC_GAPS.md` | Lücken der IPv64-Spec und wie der Swift-Client sie löst |
 | `Sources/IPv64/IPv64.swift`, `Sources/IPv64/Core/*` | Client, Konfiguration, Transport, Request-Bau, Fehler, Datumscodierung, offene Enums, Multipart |
 | `Sources/IPv64/API/*.swift` | Endpunkte je Bereich (Doc-Kommentar jeder Methode endet mit `` `METHODE /pfad` ``) |
 | `Sources/IPv64/Models/**` | Modelle inkl. `CodingKeys` (= exakte JSON-Schlüssel) |
-| `Tests/IPv64Tests/*.swift`, `Support/MockTransport.swift` | 171 Tests (davon 5 in `DocumentationExamples.swift`). Portiere sie inhaltlich (gleiche Fälle, gleiche JSON-Fixtures, gleiche erwarteten URLs) |
+| `Tests/IPv64Tests/*.swift`, `Support/MockTransport.swift` | 176 Tests (davon 5 in `DocumentationExamples.swift`). Portiere sie inhaltlich (gleiche Fälle, gleiche JSON-Fixtures, gleiche erwarteten URLs) |
 | `Scripts/generate_docs.py` | Generator für die Referenz-Doku beider Clients, als Vorbild für ein Kotlin-Pendant |
 | `AGENTS.md`, Abschnitt „Node64 – the local node API“ | 10 Node64-Regeln und 8 Rezepte |
 | `docs/NODE64_API_REFERENCE.md`, `docs/NODE64_MODELS.md` | Alle 290 Node64-Endpunkte und -Modelle |
@@ -181,11 +182,11 @@ Diese Punkte hat das Swift-Package bereits gegen Spec und Doku geklärt. Lies je
    - B: Healthchecks, DNS-Failover, Statusseiten, Offline-Pages (37)
    - C: CDN, DNS64 (31)
    - D: Cloud Router, Gateways, Peers (39)
-   - E: Healthchecks 2.0, Nodes (41)
-   - F: Honeypot64, Threat (11)
+   - E: Healthchecks 2.0, Nodes (43)
+   - F: Honeypot64, Threat (12)
 
    Jeder Agent portiert die zugehörigen Swift-Tests und arbeitet in einem eigenen Git-Worktree (Agent-Tool mit `isolation: "worktree"`), ändert nur die ihm zugeordneten Dateien und verifiziert dort mit `./gradlew :ipv64:test`. Danach führst du die Worktrees zusammen und baust komplett.
-3. **Abdeckung maschinell prüfen:** Ein Skript gleicht jede Operation der `spec/openapi.json` (Methode + Pfad) gegen die Kotlin-Quellen ab. Das Ziel ist **189/189**. Ein zweites Skript vergleicht je Modell die `@SerialName`-Werte und Typen mit den Schema-Properties (Tippfehler bei JSON-Schlüsseln sind das Hauptrisiko) und meldet `Instant`-Felder ohne `IPv64InstantSerializer`.
+3. **Abdeckung maschinell prüfen:** Ein Skript gleicht jede Operation der `spec/openapi.json` (Methode + Pfad) gegen die Kotlin-Quellen ab. Das Ziel ist **192/192**. Ein zweites Skript vergleicht je Modell die `@SerialName`-Werte und Typen mit den Schema-Properties (Tippfehler bei JSON-Schlüsseln sind das Hauptrisiko) und meldet `Instant`-Felder ohne `IPv64InstantSerializer`.
 4. **Parität mit Swift prüfen:** Ein Skript erzeugt aus `docs/API_REFERENCE.md` (Swift) und deiner Kotlin-Referenz eine Tabelle Endpunkt → Swift-Aufruf → Kotlin-Aufruf und vergleicht die Enum-Konstanten aus `docs/MODELS.md` über die Namensregel. Pfad und Methodenname müssen pro Endpunkt übereinstimmen; Abweichungen nur mit Begründung.
 5. **Review** durch einen separaten Agenten: Spec-Treue, Coroutine-Korrektheit (Cancellation, Main-Safety, keine verschluckten `CancellationException`s), öffentliche API (`explicitApi`, nichts Internes sichtbar, kein API-Key in `toString`), Test-Qualität.
 
@@ -214,8 +215,8 @@ Lege dieselbe Doku-Struktur an wie im Swift-Package:
 
 ## 8. Abnahmekriterien
 
-- `./gradlew build` ohne Fehler und ohne Compiler-Warnungen (`allWarningsAsErrors`); alle Tests grün, zu jedem der 363 Swift-Tests ein Kotlin-Pendant (171 `IPv64`, 192 `Node64`).
-- Abdeckung 189/189 (`IPv64`) und 290/290 (`Node64`), JSON-Schlüssel-Abgleich ohne Abweichungen für beide Clients, Parität mit Swift dokumentiert.
+- `./gradlew build` ohne Fehler und ohne Compiler-Warnungen (`allWarningsAsErrors`); alle Tests grün, zu jedem der 368 Swift-Tests ein Kotlin-Pendant (176 `IPv64`, 192 `Node64`).
+- Abdeckung 192/192 (`IPv64`) und 290/290 (`Node64`), JSON-Schlüssel-Abgleich ohne Abweichungen für beide Clients, Parität mit Swift dokumentiert.
 - Keine `!!`, kein `runBlocking`, kein `GlobalScope` im Library-Code; `explicitApi()` aktiv.
 - `./gradlew publishToMavenLocal` funktioniert; das README zeigt die Einbindung in eine Android-App. Ein App-Modul ist nicht nötig (es bräuchte das Android SDK).
 - Abschlussbericht (deutsch, knapp): Projektstruktur, Abweichungen vom Swift-Package mit Begründung, `Long`-Felder, Widersprüche Spec ↔ Swift, offene Punkte. Alles getrennt nach `IPv64` und `Node64`.

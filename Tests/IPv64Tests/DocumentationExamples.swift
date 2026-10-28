@@ -164,9 +164,17 @@ enum DocumentationExamples {
 
     /// A new Cloud Router and a new CDN domain answer `202 Accepted`; poll `get` until the work is done.
     static func waitForAsyncResources(ipv64: IPv64) async throws {
-        // Gateway: ready once `state == .ready` (it starts as `.creating`).
+        // Creating a router also creates its first gateway, but the 202 answer may not list it yet.
         let router = try await ipv64.cloudRouters.create(name: "Home Lab")
-        let gateway = try await ipv64.cloudRouters.createGateway(router: router.id, name: "Frankfurt")
+        let routerWithGateway = try await poll {
+            try await ipv64.cloudRouters.get(router.id)
+        } until: { router in
+            !(router.gateways ?? []).isEmpty
+        }
+        guard let gateway = routerWithGateway.gateways?.first else { throw RecipeError.timedOut }
+
+        // Gateway: ready once `state == .ready` (it starts as `.creating`).
+        // Use `cloudRouters.createGateway(router:name:)` only for additional gateways.
         let readyGateway = try await poll {
             try await ipv64.gateways.get(gateway.id)
         } until: { gateway in

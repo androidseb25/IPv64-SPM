@@ -107,6 +107,8 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `PATCH /hc2/channels/{id}` | `ipv64.hc2.channels.update` |
 | `POST /hc2/channels/{id}/send` | `ipv64.hc2.channels.send` |
 | `POST /hc2/channels/{id}/test` | `ipv64.hc2.channels.sendTest` |
+| `POST /hc2/channels/{id}/verify` | `ipv64.hc2.channels.verify` |
+| `POST /hc2/channels/{id}/verify/send` | `ipv64.hc2.channels.sendVerificationCode` |
 | `GET /hc2/checks` | `ipv64.hc2.checks.list` |
 | `POST /hc2/checks` | `ipv64.hc2.checks.create` |
 | `DELETE /hc2/checks/{token}` | `ipv64.hc2.checks.delete` |
@@ -150,6 +152,7 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /healthchecks/{token}/rotate-token` | `ipv64.healthchecks.rotateToken` |
 | `GET /healthchecks/{token}/stats` | `ipv64.healthchecks.stats` |
 | `POST /healthchecks/{token}/test-notification` | `ipv64.healthchecks.sendTestNotification` |
+| `GET /honeypot/list-token` | `ipv64.honeypot.listToken` |
 | `POST /honeypot/reports` | `ipv64.honeypot.submitReport` |
 | `GET /honeypot/sensors` | `ipv64.honeypot.sensors` |
 | `GET /honeypot/stats` | `ipv64.honeypot.stats` |
@@ -1073,6 +1076,22 @@ func sendTest(_ id: Int) async throws -> HC2ChannelTestResult
 
 Sends a test message through a channel.
 
+### `ipv64.hc2.channels.sendVerificationCode` `POST /hc2/channels/{id}/verify/send`
+
+```swift
+func sendVerificationCode(_ id: Int) async throws -> JSONValue
+```
+
+Sends a 6-digit confirmation code to the e-mail address or phone number of a channel.
+
+### `ipv64.hc2.channels.verify` `POST /hc2/channels/{id}/verify`
+
+```swift
+func verify(_ id: Int, code: String) async throws -> JSONValue
+```
+
+Verifies a channel with the code from `sendVerificationCode(_:)`; afterwards ipv64 delivers through it.
+
 ### `ipv64.hc2.channels.send` `POST /hc2/channels/{id}/send`
 
 ```swift
@@ -1448,6 +1467,14 @@ func sensors() async throws -> [HoneypotSensor]
 ```
 
 Sensors of the account with their contribution over 24 hours and 7 days. A sensor's IP is never returned.
+
+### `ipv64.honeypot.listToken` `GET /honeypot/list-token`
+
+```swift
+func listToken() async throws -> HoneypotListToken
+```
+
+The personal list token for the live version of the v64 Blocklist.
 
 ### `ipv64.honeypot.stats` `GET /honeypot/stats`
 

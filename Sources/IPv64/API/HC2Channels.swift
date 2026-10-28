@@ -21,8 +21,8 @@ extension IPv64.HC2 {
 
         /// Creates a channel.
         ///
-        /// Mail and SMS channels must be confirmed by code in the portal afterwards
-        /// (`verification_required`); nothing is sent before that.
+        /// Mail and SMS channels must be confirmed by code afterwards (`verification_required`), in the portal or
+        /// with ``sendVerificationCode(_:)`` and ``verify(_:code:)``; nothing is sent before that.
         ///
         /// `POST /hc2/channels`
         public func create(_ channel: HC2ChannelInput) async throws -> HC2Channel {
@@ -55,6 +55,39 @@ extension IPv64.HC2 {
         /// `POST /hc2/channels/{id}/test`
         public func sendTest(_ id: Int) async throws -> HC2ChannelTestResult {
             try await client.send(Request(.post, "/hc2/channels/\(id)/test"))
+        }
+
+        /// Sends a 6-digit confirmation code to the e-mail address or phone number of a channel.
+        ///
+        /// The code is valid for 15 minutes; at most 5 codes can be sent per hour (429 otherwise). A channel that
+        /// is already verified answers `verified: true` and nothing is sent, e.g. `result["verified"]?.boolValue`.
+        /// The API documents no response schema, so the result is untyped: the `data` member of a
+        /// `{"data": …}` envelope, otherwise the whole body (`JSONValue.null` for an empty body).
+        ///
+        /// `POST /hc2/channels/{id}/verify/send`
+        public func sendVerificationCode(_ id: Int) async throws -> JSONValue {
+            try await client.sendRawJSON(Request(.post, "/hc2/channels/\(id)/verify/send"), unwrappingData: true)
+        }
+
+        /// Verifies a channel with the code from ``sendVerificationCode(_:)``; afterwards ipv64 delivers through it.
+        ///
+        /// A wrong or expired code fails with 422 `invalid_code`. The API documents no response schema, so the
+        /// result is untyped: the `data` member of a `{"data": …}` envelope, otherwise the whole body
+        /// (`JSONValue.null` for an empty body).
+        ///
+        /// - Parameters:
+        ///   - id: Channel ID.
+        ///   - code: The 6-digit code.
+        ///
+        /// `POST /hc2/channels/{id}/verify`
+        public func verify(_ id: Int, code: String) async throws -> JSONValue {
+            struct Body: Encodable, Sendable {
+                let code: String
+            }
+            return try await client.sendRawJSON(
+                Request(.post, "/hc2/channels/\(id)/verify", body: .json(Body(code: code))),
+                unwrappingData: true
+            )
         }
 
         /// Sends a message through a verified, active ipv64 channel (`ipv64_mail`, `ipv64_sms`, `app`) directly,
