@@ -15,6 +15,8 @@ public struct HC2CheckType: IPv64OpenEnum {
     public static let cert: Self = "cert"
     public static let push: Self = "push"
     public static let docker: Self = "docker"
+    /// WHOIS/RDAP registration check (no extra `params` are specified).
+    public static let whois: Self = "whois"
 }
 
 /// Where a check runs.

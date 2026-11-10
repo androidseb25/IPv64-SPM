@@ -254,6 +254,34 @@ extension Node64 {
         public let targets: JSONValue?
         /// Update limit; only with a central ipv64 API key.
         public let limit: DynDNSLimit?
+        /// Cluster state; only with the DynDNS cluster area and further nodes.
+        public let cluster: DynDNSClusterState?
+    }
+
+    /// The `cluster` object of ``DynDNSStatus``.
+    public struct DynDNSClusterState: Codable, Hashable, Sendable {
+        /// ID of the node that updates the names; empty while being determined.
+        public let leader: String?
+        /// ID of this node.
+        public let thisNode: String?
+        /// Preferred node (see ``Node64/DynDNS/setPreferredNode(_:)``).
+        public let preferredNode: String?
+
+        enum CodingKeys: String, CodingKey {
+            case leader
+            case thisNode = "this_node"
+            case preferredNode = "preferred_node"
+        }
+    }
+
+    /// Result of ``Node64/DynDNS/setPreferredNode(_:)``.
+    public struct DynDNSClusterPreference: Codable, Hashable, Sendable {
+        /// The stored preferred node ID.
+        public let preferredNode: String?
+
+        enum CodingKeys: String, CodingKey {
+            case preferredNode = "preferred_node"
+        }
     }
 
     /// Connection hint inside ``DynDNSStatus``.

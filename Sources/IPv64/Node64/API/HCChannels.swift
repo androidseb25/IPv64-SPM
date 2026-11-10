@@ -85,3 +85,71 @@ extension Node64.HC.Channels {
         ]))
     }
 }
+
+extension Node64.HC {
+    /// E-mail, SMS and app channels at ipv64 (tag *Benachrichtigungen*). Needs the central ipv64 API key
+    /// of the node; without one the calls fail with 409.
+    public var ipv64Channels: IPv64Channels { IPv64Channels(client: client) }
+
+    /// Endpoints of the ipv64 channels.
+    public struct IPv64Channels: Sendable { let client: Node64 }
+}
+
+extension Node64.HC.IPv64Channels {
+    /// Lists the channels at ipv64, including unconfirmed ones.
+    ///
+    /// `GET /ipv64/channels`
+    public func list() async throws -> [Node64.IPv64Channel] {
+        try await client.send(Request(.get, "/ipv64/channels"))
+    }
+
+    /// Returns one channel.
+    ///
+    /// `GET /ipv64/channels/{id}`
+    public func get(_ id: Int) async throws -> Node64.IPv64Channel {
+        try await client.send(Request(.get, "/ipv64/channels/\(id)"))
+    }
+
+    /// Creates an e-mail or SMS channel (`type` and `name` required). It starts unconfirmed:
+    /// call ``sendVerification(_:)``, then ``verify(_:code:)``.
+    ///
+    /// `POST /ipv64/channels`
+    public func create(_ input: Node64.IPv64ChannelInput) async throws -> Node64.IPv64Channel {
+        try await client.send(Request(.post, "/ipv64/channels", body: .json(input)))
+    }
+
+    /// Changes a channel; partial update, missing fields stay. A new address or number makes the channel unconfirmed again.
+    ///
+    /// `PUT /ipv64/channels/{id}`
+    public func update(_ id: Int, _ input: Node64.IPv64ChannelInput) async throws -> Node64.IPv64Channel {
+        try await client.send(Request(.put, "/ipv64/channels/\(id)", body: .json(input)))
+    }
+
+    /// Deletes the channel at ipv64.
+    ///
+    /// `DELETE /ipv64/channels/{id}`
+    public func delete(_ id: Int) async throws {
+        try await client.sendWithoutContent(Request(.delete, "/ipv64/channels/\(id)"))
+    }
+
+    /// Sends a test message (confirmed channels only).
+    ///
+    /// `POST /ipv64/channels/{id}/test`
+    public func sendTest(_ id: Int) async throws -> Node64.ChannelTestResult {
+        try await client.send(Request(.post, "/ipv64/channels/\(id)/test"))
+    }
+
+    /// Sends the confirmation code to the address or number (202; may fail with 429).
+    ///
+    /// `POST /ipv64/channels/{id}/verify/send`
+    public func sendVerification(_ id: Int) async throws {
+        try await client.sendWithoutContent(Request(.post, "/ipv64/channels/\(id)/verify/send"))
+    }
+
+    /// Confirms the channel with the code.
+    ///
+    /// `POST /ipv64/channels/{id}/verify`
+    public func verify(_ id: Int, code: String) async throws -> Node64.IPv64Channel {
+        try await client.send(Request(.post, "/ipv64/channels/\(id)/verify", body: .json(["code": code])))
+    }
+}

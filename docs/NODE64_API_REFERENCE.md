@@ -36,6 +36,8 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /cdn64/check` | `node64.proxy64.check` |
 | `GET /cdn64/default` | `node64.proxy64.defaultPage` |
 | `PUT /cdn64/default` | `node64.proxy64.updateDefaultPage` |
+| `GET /cdn64/docker` | `node64.proxy64.docker` |
+| `PUT /cdn64/docker` | `node64.proxy64.updateDocker` |
 | `GET /cdn64/honeypot` | `node64.proxy64.honeypot.get` |
 | `PUT /cdn64/honeypot` | `node64.proxy64.honeypot.update` |
 | `DELETE /cdn64/honeypot/blocks/{ip}` | `node64.proxy64.honeypot.unblock` |
@@ -47,9 +49,14 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /cdn64/hosts/{id}/disable` | `node64.proxy64.hosts.disable` |
 | `POST /cdn64/hosts/{id}/enable` | `node64.proxy64.hosts.enable` |
 | `POST /cdn64/hosts/{id}/healthcheck` | `node64.proxy64.hosts.createHealthcheck` |
+| `POST /cdn64/hosts/{id}/localdns` | `node64.proxy64.hosts.addLocalDNS` |
 | `DELETE /cdn64/hosts/{id}/online` | `node64.proxy64.online.disable` |
 | `POST /cdn64/hosts/{id}/online` | `node64.proxy64.online.enable` |
+| `POST /cdn64/hosts/{id}/online/pause` | `node64.proxy64.online.pause` |
 | `POST /cdn64/hosts/{id}/online/test` | `node64.proxy64.online.test` |
+| `PUT /cdn64/hosts/{id}/protection` | `node64.proxy64.hosts.updateProtection` |
+| `GET /cdn64/hosts/{id}/servers` | `node64.proxy64.hosts.servers` |
+| `PUT /cdn64/hosts/{id}/servers` | `node64.proxy64.hosts.updateServers` |
 | `GET /cdn64/limits` | `node64.proxy64.limits.get` |
 | `PUT /cdn64/limits` | `node64.proxy64.limits.update` |
 | `DELETE /cdn64/limits/bans/{ip}` | `node64.proxy64.limits.unban` |
@@ -57,7 +64,12 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `DELETE /cdn64/online` | `node64.proxy64.online.forgetTunnel` |
 | `GET /cdn64/online` | `node64.proxy64.online.status` |
 | `PUT /cdn64/online` | `node64.proxy64.online.setTunnel` |
+| `POST /cdn64/online/names/{rid}/pause` | `node64.proxy64.online.pauseName` |
+| `GET /cdn64/online/servers` | `node64.proxy64.online.servers` |
+| `PUT /cdn64/online/servers` | `node64.proxy64.online.updateServers` |
 | `POST /cdn64/online/tunnel` | `node64.proxy64.online.registerTunnel` |
+| `GET /cdn64/protection` | `node64.proxy64.protection` |
+| `POST /cdn64/release` | `node64.proxy64.release` |
 | `GET /cdn64/settings` | `node64.proxy64.settings` |
 | `PUT /cdn64/settings` | `node64.proxy64.updateSettings` |
 | `GET /cdn64/stats` | `node64.proxy64.stats` |
@@ -78,6 +90,9 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /certs/dns-accounts` | `node64.certificates.dnsAccounts.create` |
 | `DELETE /certs/dns-accounts/{id}` | `node64.certificates.dnsAccounts.delete` |
 | `PUT /certs/dns-accounts/{id}` | `node64.certificates.dnsAccounts.update` |
+| `GET /certs/dns-check` | `node64.certificates.dnsCheck` |
+| `PUT /certs/dns-check` | `node64.certificates.updateDNSCheck` |
+| `POST /certs/dns-check/run` | `node64.certificates.runDNSCheck` |
 | `GET /certs/dns-providers` | `node64.certificates.dnsProviders` |
 | `GET /certs/domains` | `node64.certificates.domains` |
 | `POST /certs/upload` | `node64.certificates.upload` |
@@ -123,11 +138,20 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `GET /dns64/allowlist` | `node64.dns64.allowlist.list` |
 | `POST /dns64/allowlist` | `node64.dns64.allowlist.add` |
 | `POST /dns64/allowlist/import` | `node64.dns64.allowlist.importDomains` |
+| `DELETE /dns64/allowlists` | `node64.dns64.allowLists.remove` |
+| `GET /dns64/allowlists` | `node64.dns64.allowLists.list` |
+| `POST /dns64/allowlists` | `node64.dns64.allowLists.add` |
+| `POST /dns64/allowlists` | `node64.dns64.allowLists.add` |
 | `GET /dns64/ca.crt` | `node64.dns64.caCertificate` |
 | `GET /dns64/cache` | `node64.dns64.cache.get` |
 | `POST /dns64/cache/flush` | `node64.dns64.cache.flush` |
+| `DELETE /dns64/denylist` | `node64.dns64.denylist.remove` |
+| `GET /dns64/denylist` | `node64.dns64.denylist.list` |
+| `POST /dns64/denylist` | `node64.dns64.denylist.add` |
+| `PUT /dns64/denylist` | `node64.dns64.denylist.replace` |
 | `GET /dns64/device-names` | `node64.dns64.devices.names` |
 | `GET /dns64/devices` | `node64.dns64.devices.list` |
+| `GET /dns64/docker` | `node64.dns64.docker` |
 | `GET /dns64/forwards` | `node64.dns64.forwards.list` |
 | `POST /dns64/forwards` | `node64.dns64.forwards.create` |
 | `DELETE /dns64/forwards/{id}` | `node64.dns64.forwards.delete` |
@@ -139,9 +163,11 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /dns64/groups` | `node64.dns64.groups.create` |
 | `DELETE /dns64/groups/domains/{id}` | `node64.dns64.groups.domains.delete` |
 | `DELETE /dns64/groups/members/{id}` | `node64.dns64.groups.members.delete` |
+| `PATCH /dns64/groups/members/{id}` | `node64.dns64.groups.members.update` |
 | `DELETE /dns64/groups/schedules/{id}` | `node64.dns64.groups.schedules.delete` |
 | `POST /dns64/groups/schedules/{id}/disable` | `node64.dns64.groups.schedules.disable` |
 | `POST /dns64/groups/schedules/{id}/enable` | `node64.dns64.groups.schedules.enable` |
+| `POST /dns64/groups/unassign` | `node64.dns64.groups.unassign` |
 | `DELETE /dns64/groups/{id}` | `node64.dns64.groups.delete` |
 | `PUT /dns64/groups/{id}` | `node64.dns64.groups.rename` |
 | `POST /dns64/groups/{id}/domains` | `node64.dns64.groups.domains.create` |
@@ -152,6 +178,7 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /dns64/groups/{id}/schedules` | `node64.dns64.groups.schedules.create` |
 | `DELETE /dns64/lists` | `node64.dns64.lists.remove` |
 | `GET /dns64/lists` | `node64.dns64.lists.list` |
+| `POST /dns64/lists` | `node64.dns64.lists.add` |
 | `POST /dns64/lists` | `node64.dns64.lists.add` |
 | `GET /dns64/log` | `node64.dns64.log` |
 | `GET /dns64/mobileconfig` | `node64.dns64.mobileConfig` |
@@ -171,12 +198,14 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `PUT /dns64/rewrites/{id}` | `node64.dns64.rewrites.update` |
 | `POST /dns64/rewrites/{id}/disable` | `node64.dns64.rewrites.disable` |
 | `POST /dns64/rewrites/{id}/enable` | `node64.dns64.rewrites.enable` |
+| `GET /dns64/services` | `node64.dns64.services` |
 | `GET /dns64/settings` | `node64.dns64.settings` |
 | `PUT /dns64/settings` | `node64.dns64.updateSettings` |
 | `GET /dns64/status` | `node64.dns64.status` |
 | `GET /dns64/summary` | `node64.dns64.summary` |
 | `GET /dns64/timeline` | `node64.dns64.timeline` |
 | `GET /dns64/top` | `node64.dns64.top` |
+| `GET /dns64/top/list` | `node64.dns64.topList` |
 | `DELETE /dns64/upstreams` | `node64.dns64.upstreams.remove` |
 | `GET /dns64/upstreams` | `node64.dns64.upstreams.list` |
 | `POST /dns64/upstreams` | `node64.dns64.upstreams.add` |
@@ -186,9 +215,12 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `PUT /dns64/zones/{id}` | `node64.dns64.zones.update` |
 | `POST /dns64/zones/{id}/disable` | `node64.dns64.zones.disable` |
 | `POST /dns64/zones/{id}/enable` | `node64.dns64.zones.enable` |
+| `GET /dns64/zones/{id}/tsig` | `node64.dns64.zones.tsig` |
+| `POST /dns64/zones/{id}/tsig` | `node64.dns64.zones.regenerateTSIG` |
 | `GET /dns64/zones/{id}/zonefile` | `node64.dns64.zones.zonefile` |
 | `GET /dyndns/account/names` | `node64.dyndns.accountNames` |
 | `POST /dyndns/check` | `node64.dyndns.check` |
+| `PUT /dyndns/cluster` | `node64.dyndns.setPreferredNode` |
 | `GET /dyndns/history` | `node64.dyndns.history` |
 | `GET /dyndns/settings` | `node64.dyndns.settings` |
 | `PUT /dyndns/settings` | `node64.dyndns.updateSettings` |
@@ -208,6 +240,7 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `GET /events` | `node64.hc.events` |
 | `POST /export` | `node64.node.exportConfiguration` |
 | `GET /group` | `node64.cluster.group` |
+| `POST /group/acme` | `node64.cluster.resolveACMEConflict` |
 | `DELETE /group/code` | `node64.cluster.discardCode` |
 | `POST /group/code` | `node64.cluster.createCode` |
 | `POST /group/join` | `node64.cluster.join` |
@@ -216,13 +249,17 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `PUT /group/members/{id}` | `node64.cluster.updateMember` |
 | `POST /group/members/{id}/resume` | `node64.cluster.resumeMember` |
 | `PUT /group/sync` | `node64.cluster.setSync` |
+| `POST /group/users` | `node64.cluster.resolveUserConflict` |
 | `GET /health` | `node64.node.health` |
 | `GET /healthchecks/docker/containers` | `node64.hc.docker.containers` |
+| `POST /healthchecks/docker/enable` | `node64.hc.docker.enable` |
+| `POST /healthchecks/docker/probe` | `node64.hc.docker.probe` |
 | `GET /healthchecks/docker/systems` | `node64.hc.docker.systems.list` |
 | `POST /healthchecks/docker/systems` | `node64.hc.docker.systems.create` |
 | `DELETE /healthchecks/docker/systems/{id}` | `node64.hc.docker.systems.delete` |
 | `GET /healthchecks/docker/systems/{id}` | `node64.hc.docker.systems.get` |
 | `PUT /healthchecks/docker/systems/{id}` | `node64.hc.docker.systems.update` |
+| `POST /healthchecks/docker/systems/{id}/ascheck-all` | `node64.hc.docker.systems.asCheckAll` |
 | `GET /healthchecks/docker/systems/{id}/resources` | `node64.hc.docker.systems.resources` |
 | `GET /healthchecks/docker/systems/{id}/series` | `node64.hc.docker.systems.series` |
 | `DELETE /healthchecks/docker/systems/{id}/settings` | `node64.hc.docker.systems.resetSettings` |
@@ -234,12 +271,14 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `DELETE /healthchecks/proxmox/systems/{id}` | `node64.hc.proxmox.systems.delete` |
 | `GET /healthchecks/proxmox/systems/{id}` | `node64.hc.proxmox.systems.get` |
 | `PUT /healthchecks/proxmox/systems/{id}` | `node64.hc.proxmox.systems.update` |
+| `POST /healthchecks/proxmox/systems/{id}/ascheck-all` | `node64.hc.proxmox.systems.asCheckAll` |
 | `GET /healthchecks/proxmox/systems/{id}/resources` | `node64.hc.proxmox.systems.resources` |
 | `GET /healthchecks/proxmox/systems/{id}/series` | `node64.hc.proxmox.systems.series` |
 | `DELETE /healthchecks/proxmox/systems/{id}/settings` | `node64.hc.proxmox.systems.resetSettings` |
 | `GET /healthchecks/proxmox/systems/{id}/settings` | `node64.hc.proxmox.systems.settings` |
 | `PUT /healthchecks/proxmox/systems/{id}/settings` | `node64.hc.proxmox.systems.updateSettings` |
 | `GET /honeypot/catalog` | `node64.honeypot.catalog` |
+| `POST /honeypot/cert` | `node64.honeypot.certificate` |
 | `GET /honeypot/config` | `node64.honeypot.settings` |
 | `PUT /honeypot/config` | `node64.honeypot.updateSettings` |
 | `DELETE /honeypot/events` | `node64.honeypot.clearEvents` |
@@ -247,10 +286,22 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `GET /honeypot/live` | `node64.honeypot.live` |
 | `GET /honeypot/stats` | `node64.honeypot.stats` |
 | `GET /honeypot/status` | `node64.honeypot.status` |
+| `GET /honeypot/watch` | `node64.honeypot.watch.list` |
+| `POST /honeypot/watch` | `node64.honeypot.watch.add` |
+| `POST /honeypot/watch/check` | `node64.honeypot.watch.check` |
+| `DELETE /honeypot/watch/{id}` | `node64.honeypot.watch.remove` |
 | `POST /import` | `node64.node.importConfiguration` |
 | `POST /import` | `node64.node.importConfiguration` |
 | `GET /incidents` | `node64.hc.incidents` |
 | `GET /ipv64` | `node64.link.ipv64Account` |
+| `GET /ipv64/channels` | `node64.hc.ipv64Channels.list` |
+| `POST /ipv64/channels` | `node64.hc.ipv64Channels.create` |
+| `DELETE /ipv64/channels/{id}` | `node64.hc.ipv64Channels.delete` |
+| `GET /ipv64/channels/{id}` | `node64.hc.ipv64Channels.get` |
+| `PUT /ipv64/channels/{id}` | `node64.hc.ipv64Channels.update` |
+| `POST /ipv64/channels/{id}/test` | `node64.hc.ipv64Channels.sendTest` |
+| `POST /ipv64/channels/{id}/verify` | `node64.hc.ipv64Channels.verify` |
+| `POST /ipv64/channels/{id}/verify/send` | `node64.hc.ipv64Channels.sendVerification` |
 | `DELETE /ipv64/key` | `node64.link.removeIPv64Key` |
 | `PUT /ipv64/key` | `node64.link.storeIPv64Key` |
 | `GET /keys` | `node64.node.apiKeys.list` |
@@ -258,10 +309,13 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `DELETE /keys/{id}` | `node64.node.apiKeys.delete` |
 | `GET /link` | `node64.link.status` |
 | `POST /link/apikey` | `node64.link.connect` |
+| `POST /link/cancel` | `node64.link.cancelCodeLink` |
 | `GET /link/conflicts` | `node64.link.conflicts` |
 | `POST /link/conflicts/{id}` | `node64.link.resolveConflict` |
 | `POST /link/conflicts/{id}` | `node64.link.resolveConflict` |
 | `PUT /link/settings` | `node64.link.updateSettings` |
+| `POST /link/start` | `node64.link.startCodeLink` |
+| `GET /link/status` | `node64.link.codeStatus` |
 | `POST /link/unlink` | `node64.link.unlink` |
 | `GET /logging` | `node64.node.logging` |
 | `PUT /logging` | `node64.node.updateLogging` |
@@ -270,6 +324,10 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /maintenance` | `node64.hc.maintenance.create` |
 | `DELETE /maintenance/{id}` | `node64.hc.maintenance.delete` |
 | `PUT /maintenance/{id}` | `node64.hc.maintenance.update` |
+| `GET /mcp` | `node64.node.mcp.get` |
+| `PUT /mcp` | `node64.node.mcp.setEnabled` |
+| `POST /mcp/keys` | `node64.node.mcp.createKey` |
+| `DELETE /mcp/keys/{id}` | `node64.node.mcp.deleteKey` |
 | `GET /metrics` | `node64.node.metrics` |
 | `GET /modules` | `node64.node.modules.list` |
 | `POST /modules/{name}/disable` | `node64.node.modules.disable` |
@@ -294,6 +352,11 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `PUT /retention` | `node64.node.updateRetention` |
 | `GET /settings` | `node64.node.settings` |
 | `PUT /settings` | `node64.node.updateSettings` |
+| `GET /sonar64/inbound` | `node64.sonar64.inbound` |
+| `GET /sonar64/recent` | `node64.sonar64.recent` |
+| `GET /sonar64/settings` | `node64.sonar64.settings` |
+| `PUT /sonar64/settings` | `node64.sonar64.updateSettings` |
+| `GET /sonar64/status` | `node64.sonar64.status` |
 | `GET /status` | `node64.node.status` |
 | `GET /status-pages` | `node64.hc.statusPages.list` |
 | `POST /status-pages` | `node64.hc.statusPages.create` |
@@ -301,12 +364,22 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `DELETE /status-pages/{id}` | `node64.hc.statusPages.delete` |
 | `GET /status-pages/{id}` | `node64.hc.statusPages.get` |
 | `PUT /status-pages/{id}` | `node64.hc.statusPages.update` |
+| `POST /status-pages/{id}/items` | `node64.hc.statusPages.addItems` |
 | `DELETE /status-pages/{id}/logo` | `node64.hc.statusPages.removeLogo` |
 | `PUT /status-pages/{id}/logo` | `node64.hc.statusPages.setLogo` |
 | `GET /status-pages/{id}/notices` | `node64.hc.statusPages.notices.list` |
 | `POST /status-pages/{id}/notices` | `node64.hc.statusPages.notices.create` |
 | `DELETE /status-pages/{id}/notices/{nid}` | `node64.hc.statusPages.notices.delete` |
 | `PUT /status-pages/{id}/notices/{nid}` | `node64.hc.statusPages.notices.update` |
+| `GET /update` | `node64.node.update.get` |
+| `POST /update/apply` | `node64.node.update.apply` |
+| `POST /update/check` | `node64.node.update.check` |
+| `POST /update/reset` | `node64.node.update.reset` |
+| `PUT /update/settings` | `node64.node.update.updateSettings` |
+| `GET /users` | `node64.node.users.list` |
+| `GET /users/me` | `node64.node.users.me` |
+| `PUT /users/me` | `node64.node.users.updateMe` |
+| `DELETE /users/{id}` | `node64.node.users.delete` |
 | `GET /version` | `node64.node.version` |
 
 ## `node64.certificates`
@@ -432,6 +505,30 @@ func dnsProviders() async throws -> [Node64.DNSProvider]
 ```
 
 DNS providers with their fields.
+
+### `node64.certificates.dnsCheck` `GET /certs/dns-check`
+
+```swift
+func dnsCheck() async throws -> Node64.CertDNSCheck
+```
+
+Own resolvers of the DNS-01 check. Empty = only the built-in ones (ipv64 name servers directly, public resolvers).
+
+### `node64.certificates.updateDNSCheck` `PUT /certs/dns-check`
+
+```swift
+func updateDNSCheck(resolvers: [String]) async throws -> Node64.CertDNSCheck
+```
+
+Saves the own resolvers of the DNS-01 check. The list replaces the stored one; an empty list leaves only the built-in ones.
+
+### `node64.certificates.runDNSCheck` `POST /certs/dns-check/run`
+
+```swift
+func runDNSCheck() async throws -> Node64.CertDNSCheckResult
+```
+
+Tests the DNS-01 check: which ways work from here. Takes at most 30 seconds; one working way is enough. The default request timeout is also 30 seconds, so raise `Configuration.timeoutInterval` for this call.
 
 ## `node64.certificates.account`
 
@@ -661,9 +758,49 @@ func setSync(module: String, item: String? = nil, enabled: Bool) async throws ->
 
 Switches the sync of a module or area on or off.
 
+### `node64.cluster.resolveUserConflict` `POST /group/users`
+
+```swift
+func resolveUserConflict(uid: String) async throws -> Node64.ClusterUserResolution
+```
+
+Chooses which user of a same-named set wins cluster-wide (see `Node64/ClusterGroup/userConflicts`). The other versions of that user are dropped on all nodes.
+
+### `node64.cluster.resolveACMEConflict` `POST /group/acme`
+
+```swift
+func resolveACMEConflict(thumbprint: String) async throws -> Node64.ClusterACMEResolution
+```
+
+Chooses the ACME account cluster-wide when the nodes have different ones (see `Node64/ClusterGroup/acmeAccounts`). The other ACME accounts are dropped on all nodes.
+
 ## `node64.dns64`
 
 DNS64 resolver: statistics, lists, records, groups, forwards, rewrites, zones.
+
+### `node64.dns64.topList` `GET /dns64/top/list`
+
+```swift
+func topList(kind: Node64.DNS64TopKind, range: Node64.DNS64Range? = nil, query: String? = nil, sort: Node64.DNS64TopSort? = nil, direction: Node64.DNS64SortDirection? = nil, limit: Int? = nil, offset: Int? = nil) async throws -> Node64.DNS64TopPage
+```
+
+Full top list with paging, search and sorting.
+
+### `node64.dns64.services` `GET /dns64/services`
+
+```swift
+func services() async throws -> Node64.DNS64Services
+```
+
+Categories and services that can be blocked per click. Block a service by passing its
+
+### `node64.dns64.docker` `GET /dns64/docker`
+
+```swift
+func docker() async throws -> Node64.DNS64Docker
+```
+
+Entries from Docker labels (`node64.dns.name`) and the state of the sync. Turn the integration on with `docker` in `updateSettings(_:)`.
 
 ### `node64.dns64.status` `GET /dns64/status`
 
@@ -753,6 +890,42 @@ func mobileConfig(transport: Node64.DNS64Protocol? = nil, host: String? = nil) a
 
 Configuration profile for iOS and macOS (`application/x-apple-aspen-config`).
 
+## `node64.dns64.allowLists`
+
+Allow lists: lists of domains that no blocklist blocks. Not to be confused with `allowlist` (single allowed domains).
+
+### `node64.dns64.allowLists.list` `GET /dns64/allowlists`
+
+```swift
+func list() async throws -> [Node64.DNS64ListStatus]
+```
+
+Allow lists with number of rules, last update and error. They apply to all devices and groups; the own deny list takes precedence. Without a running DNS service only the settings are returned.
+
+### `node64.dns64.allowLists.add` `POST /dns64/allowlists`
+
+```swift
+func add(_ url: String, name: String? = nil) async throws -> Node64.DNS64Settings
+```
+
+Adds an allow list (enabled). Formats: one domain per line, hosts or Adblock (`||example.com^`, `@@||example.com^`). Answers `400` if invalid or already present.
+
+### `node64.dns64.allowLists.add` `POST /dns64/allowlists`
+
+```swift
+func add(urls: [String]) async throws -> Node64.DNS64ListsAddResult
+```
+
+Adds several allow lists at once.
+
+### `node64.dns64.allowLists.remove` `DELETE /dns64/allowlists`
+
+```swift
+func remove(_ url: String) async throws -> Node64.DNS64Settings
+```
+
+Removes an allow list. Answers `404` if there is no list with this URL.
+
 ## `node64.dns64.allowlist`
 
 Allowed domains.
@@ -808,6 +981,42 @@ func flush() async throws -> Node64.DNS64CacheFlushResult
 ```
 
 Empties the cache.
+
+## `node64.dns64.denylist`
+
+Own deny list.
+
+### `node64.dns64.denylist.list` `GET /dns64/denylist`
+
+```swift
+func list() async throws -> [Node64.DNS64DenylistEntry]
+```
+
+The own deny list (every entry applies to subdomains too).
+
+### `node64.dns64.denylist.add` `POST /dns64/denylist`
+
+```swift
+func add(_ domain: String) async throws -> Node64.DNS64DenylistAdded
+```
+
+Blocks a domain. An identical allow entry is dropped. Answers `400` for an invalid domain name and `503` if the blocklist is not loaded.
+
+### `node64.dns64.denylist.remove` `DELETE /dns64/denylist`
+
+```swift
+func remove(_ domain: String) async throws
+```
+
+Removes a blocked domain. Answers `400` for an invalid domain name.
+
+### `node64.dns64.denylist.replace` `PUT /dns64/denylist`
+
+```swift
+func replace(_ domains: [String]) async throws -> Node64.DNS64DenylistReplaceResult
+```
+
+Replaces the whole deny list (`PUT`, full replace): entries not in `domains` are removed.
 
 ## `node64.dns64.devices`
 
@@ -949,6 +1158,14 @@ func hold(_ id: Int, mode: Node64.DNS64GroupHoldMode, minutes: Int? = nil, until
 
 Instant button: turns the internet off (`block`), suspends schedules and categories (`free`) or releases an active hold (empty mode).
 
+### `node64.dns64.groups.unassign` `POST /dns64/groups/unassign`
+
+```swift
+func unassign(mac: String? = nil, ip: String? = nil) async throws
+```
+
+Takes a device out of its group, like "no group" in the web interface. Removes the memberships with this MAC and/or IP. Answers `400` if neither is given.
+
 ## `node64.dns64.groups.domains`
 
 Allow and block entries of groups.
@@ -976,7 +1193,7 @@ Members (devices and networks) of groups.
 ### `node64.dns64.groups.members.create` `POST /dns64/groups/{id}/members`
 
 ```swift
-func create(group: Int, kind: Node64.DNS64GroupMemberKind, value: String, label: String? = nil) async throws -> Node64.DNS64GroupMember
+func create(group: Int, kind: Node64.DNS64GroupMemberKind, value: String, label: String? = nil, tags: [String]? = nil) async throws -> Node64.DNS64GroupMember
 ```
 
 Assigns a device or network to a group; it leaves any other group it was in.
@@ -988,6 +1205,14 @@ func delete(_ id: Int) async throws
 ```
 
 Removes a member from its group.
+
+### `node64.dns64.groups.members.update` `PATCH /dns64/groups/members/{id}`
+
+```swift
+func update(_ id: Int, label: String? = nil, tags: [String]? = nil) async throws -> Node64.DNS64GroupMember
+```
+
+Changes label and tags of a member. Fields left `nil` stay as they are; kind and value cannot change (delete and create the member instead). Answers `422` for too many or too long tags.
 
 ## `node64.dns64.groups.schedules`
 
@@ -1028,6 +1253,14 @@ Deletes a schedule.
 ## `node64.dns64.lists`
 
 Blocklists.
+
+### `node64.dns64.lists.add` `POST /dns64/lists`
+
+```swift
+func add(urls: [String]) async throws -> Node64.DNS64ListsAddResult
+```
+
+Adds several custom blocklists at once.
 
 ### `node64.dns64.lists.list` `GET /dns64/lists`
 
@@ -1205,6 +1438,22 @@ Removes a custom upstream server. Answers `404` if there is no custom server wit
 
 Local zones.
 
+### `node64.dns64.zones.tsig` `GET /dns64/zones/{id}/tsig`
+
+```swift
+func tsig(_ id: Int) async throws -> Node64.DNS64ZoneTSIG
+```
+
+Shows the key for dynamic updates (TSIG) of a zone. Name and key are empty if dynamic updates were never turned on.
+
+### `node64.dns64.zones.regenerateTSIG` `POST /dns64/zones/{id}/tsig`
+
+```swift
+func regenerateTSIG(_ id: Int) async throws -> Node64.DNS64ZoneTSIG
+```
+
+Creates a new TSIG key and turns dynamic updates on. The old key stops working immediately.
+
 ### `node64.dns64.zones.list` `GET /dns64/zones`
 
 ```swift
@@ -1304,6 +1553,14 @@ func updateSettings(_ settings: Node64.DynDNSSettings) async throws -> Node64.Dy
 ```
 
 Changes the settings. Omitted fields keep their value.
+
+### `node64.dyndns.setPreferredNode` `PUT /dyndns/cluster`
+
+```swift
+func setPreferredNode(_ node: String) async throws -> String?
+```
+
+Chooses the preferred node of the cluster for DynDNS updates. Stored on this node and shared in the cluster.
 
 ### `node64.dyndns.accountNames` `GET /dyndns/account/names`
 
@@ -1629,6 +1886,22 @@ func containers() async throws -> Node64.DockerContainers
 
 Lists all containers of the local Docker host with monitoring values and Docker checks.
 
+### `node64.hc.docker.enable` `POST /healthchecks/docker/enable`
+
+```swift
+func enable() async throws -> Node64.PVESystem
+```
+
+Sets up the local Docker socket (`NODE64_DOCKER_HOST` or `unix:///var/run/docker.sock`) as a Docker host, or switches it on again, but only if the socket answers (422 otherwise). Already set up: returned unchanged.
+
+### `node64.hc.docker.probe` `POST /healthchecks/docker/probe`
+
+```swift
+func probe(_ input: Node64.PVESystemInput, systemID: Int? = nil) async throws -> Node64.DockerProbe
+```
+
+Tests a Docker host: connection, version, containers, `/info`. Stores nothing (`generateKey` fails with 422).
+
 ## `node64.hc.docker.systems`
 
 Monitored Docker hosts (`/healthchecks/docker/systems`).
@@ -1673,6 +1946,14 @@ func delete(_ id: Int) async throws
 
 Removes a Docker host with its settings and history.
 
+### `node64.hc.docker.systems.asCheckAll` `POST /healthchecks/docker/systems/{id}/ascheck-all`
+
+```swift
+func asCheckAll(_ id: Int, scope: Node64.PVEAsCheckScope? = nil) async throws -> Node64.PVEAsCheckAllResult
+```
+
+Adds every container of the last query (without label `node64.nomonitor`) that is not yet a check as a check of type `docker`. A second call adds nothing twice.
+
 ### `node64.hc.docker.systems.resources` `GET /healthchecks/docker/systems/{id}/resources`
 
 ```swift
@@ -1712,6 +1993,74 @@ func resetSettings(_ id: Int, key: String? = nil) async throws
 ```
 
 Resets a level to "inherit everything". A check created with `asCheck` stays.
+
+## `node64.hc.ipv64Channels`
+
+E-mail, SMS and app channels at ipv64 (tag *Benachrichtigungen*). Needs the central ipv64 API key of the node; without one the calls fail with 409.
+
+### `node64.hc.ipv64Channels.list` `GET /ipv64/channels`
+
+```swift
+func list() async throws -> [Node64.IPv64Channel]
+```
+
+Lists the channels at ipv64, including unconfirmed ones.
+
+### `node64.hc.ipv64Channels.get` `GET /ipv64/channels/{id}`
+
+```swift
+func get(_ id: Int) async throws -> Node64.IPv64Channel
+```
+
+Returns one channel.
+
+### `node64.hc.ipv64Channels.create` `POST /ipv64/channels`
+
+```swift
+func create(_ input: Node64.IPv64ChannelInput) async throws -> Node64.IPv64Channel
+```
+
+Creates an e-mail or SMS channel (`type` and `name` required). It starts unconfirmed: call `sendVerification(_:)`, then `verify(_:code:)`.
+
+### `node64.hc.ipv64Channels.update` `PUT /ipv64/channels/{id}`
+
+```swift
+func update(_ id: Int, _ input: Node64.IPv64ChannelInput) async throws -> Node64.IPv64Channel
+```
+
+Changes a channel; partial update, missing fields stay. A new address or number makes the channel unconfirmed again.
+
+### `node64.hc.ipv64Channels.delete` `DELETE /ipv64/channels/{id}`
+
+```swift
+func delete(_ id: Int) async throws
+```
+
+Deletes the channel at ipv64.
+
+### `node64.hc.ipv64Channels.sendTest` `POST /ipv64/channels/{id}/test`
+
+```swift
+func sendTest(_ id: Int) async throws -> Node64.ChannelTestResult
+```
+
+Sends a test message (confirmed channels only).
+
+### `node64.hc.ipv64Channels.sendVerification` `POST /ipv64/channels/{id}/verify/send`
+
+```swift
+func sendVerification(_ id: Int) async throws
+```
+
+Sends the confirmation code to the address or number (202; may fail with 429).
+
+### `node64.hc.ipv64Channels.verify` `POST /ipv64/channels/{id}/verify`
+
+```swift
+func verify(_ id: Int, code: String) async throws -> Node64.IPv64Channel
+```
+
+Confirms the channel with the code.
 
 ## `node64.hc.maintenance`
 
@@ -1881,6 +2230,14 @@ func delete(_ id: Int) async throws
 
 Deletes a Proxmox system with its settings, history and the checks created with `asCheck`.
 
+### `node64.hc.proxmox.systems.asCheckAll` `POST /healthchecks/proxmox/systems/{id}/ascheck-all`
+
+```swift
+func asCheckAll(_ id: Int, scope: Node64.PVEAsCheckScope? = nil) async throws -> Node64.PVEAsCheckAllResult
+```
+
+Adds every guest (or, with `scope: .nodes`, every node) of the last query that is not yet a check as a check (without templates). Already monitored entries stay; a second call adds nothing twice.
+
 ### `node64.hc.proxmox.systems.resources` `GET /healthchecks/proxmox/systems/{id}/resources`
 
 ```swift
@@ -1989,6 +2346,14 @@ func removeLogo(_ id: Int) async throws
 
 Removes the logo of a status page.
 
+### `node64.hc.statusPages.addItems` `POST /status-pages/{id}/items`
+
+```swift
+func addItems(_ id: Int, _ input: Node64.StatusPageItemsInput) async throws -> Node64.StatusPage
+```
+
+Adds entries to a group of a status page: checks by token, and Proxmox nodes, guests or Docker containers by resource. A missing check of a resource is created as with "as check". Existing entries stay (not duplicated). Fails with 422 on invalid input.
+
 ## `node64.hc.statusPages.notices`
 
 Notices (announcements) of the status pages.
@@ -2093,6 +2458,50 @@ func live(minutes: Int? = nil) async throws -> Node64.Honeypot64Live
 
 Live map: attacks of the last minutes with country and map point (newest first, at most 500) and the target of the arcs. x/y are coordinates of the country map (viewBox 0 0 1000 436).
 
+### `node64.honeypot.certificate` `POST /honeypot/cert`
+
+```swift
+func certificate(_ input: Node64.Honeypot64CertificateInput) async throws -> Node64.Honeypot64CertificateResult
+```
+
+Creates a certificate for decoy names under an ipv64 domain of the account (issued via ipv64 DNS-01, 202) and selects it in the settings. With `dnsTargets` the DNS records are created at ipv64. The names become public in the CT logs. Fails with 409, 422 or 503.
+
+## `node64.honeypot.watch`
+
+Early warning (own networks at ipv64).
+
+### `node64.honeypot.watch.list` `GET /honeypot/watch`
+
+```swift
+func list() async throws -> Node64.Honeypot64Watch
+```
+
+Watched networks and DynDNS addresses (live from ipv64 with the central API key), limits, and the local retrieval state and latest hits.
+
+### `node64.honeypot.watch.add` `POST /honeypot/watch`
+
+```swift
+func add(cidr: String, label: String? = nil) async throws -> Node64.Honeypot64WatchNetwork
+```
+
+Registers a public network (or a single IP, becoming /32 or /128) at ipv64. Errors of ipv64 come through with status and code (e.g. 403, 409, 422).
+
+### `node64.honeypot.watch.remove` `DELETE /honeypot/watch/{id}`
+
+```swift
+func remove(_ id: Int) async throws
+```
+
+Removes a network at ipv64.
+
+### `node64.honeypot.watch.check` `POST /honeypot/watch/check`
+
+```swift
+func check() async throws -> Node64.Honeypot64WatchCheckResult
+```
+
+Fetches the hits of the early warning now.
+
 ## `node64.link`
 
 Link of the node to an ipv64.net account.
@@ -2177,6 +2586,30 @@ func removeIPv64Key() async throws
 
 Removes the stored ipv64 API key.
 
+### `node64.link.startCodeLink` `POST /link/start`
+
+```swift
+func startCodeLink() async throws -> Node64.LinkCode
+```
+
+Starts linking by code: fetches a code from the hub. Enter it in the ipv64.net portal; afterwards
+
+### `node64.link.codeStatus` `GET /link/status`
+
+```swift
+func codeStatus() async throws -> Node64.LinkCodeStatus
+```
+
+State of linking by code (asks the hub while a code is open).
+
+### `node64.link.cancelCodeLink` `POST /link/cancel`
+
+```swift
+func cancelCodeLink() async throws
+```
+
+Discards the open link code. Fails with `503` when linking is not available.
+
 ## `node64.node`
 
 Node itself: status, modules, settings, API keys, backups, logs.
@@ -2256,7 +2689,7 @@ Reads the log levels (global and per module).
 ### `node64.node.updateLogging` `PUT /logging`
 
 ```swift
-func updateLogging(level: Node64.LogLevel? = nil, resetMinutes: Int? = nil, modules: [String: String]? = nil) async throws -> Node64.LogSettings
+func updateLogging(level: Node64.LogLevel? = nil, resetMinutes: Int? = nil, modules: [String: String]? = nil, apiLog: Node64.APILogMode? = nil) async throws -> Node64.LogSettings
 ```
 
 Changes the log levels. Fails with `422` for an invalid level or unknown module (see `Node64/LogSettings/knownModules`).
@@ -2409,6 +2842,42 @@ func delete(_ id: Int) async throws
 
 Revokes (deletes) an API key. Clients using it lose access immediately.
 
+## `node64.node.mcp`
+
+The MCP interface (AI access) of the node.
+
+### `node64.node.mcp.get` `GET /mcp`
+
+```swift
+func get() async throws -> Node64.NodeMCP
+```
+
+Switch, areas and own keys of the MCP interface.
+
+### `node64.node.mcp.setEnabled` `PUT /mcp`
+
+```swift
+func setEnabled(_ enabled: Bool) async throws -> Node64.NodeMCP
+```
+
+Switches MCP on or off. Fails with `422` when `enabled` is missing.
+
+### `node64.node.mcp.createKey` `POST /mcp/keys`
+
+```swift
+func createKey(name: String, areas: [String]) async throws -> Node64.NodeCreatedMCPKey
+```
+
+Creates an MCP key (read access only). The key (`mcp64_…`) is only part of this response; store it securely.
+
+### `node64.node.mcp.deleteKey` `DELETE /mcp/keys/{id}`
+
+```swift
+func deleteKey(_ id: Int) async throws
+```
+
+Revokes one of your own MCP keys. Fails with `404` for an unknown key.
+
 ## `node64.node.modules`
 
 Modules of the node (DNS64, PROXY64, healthchecks, …).
@@ -2436,6 +2905,86 @@ func disable(_ name: String) async throws -> JSONValue
 ```
 
 Switches a module off.
+
+## `node64.node.update`
+
+Self-update of the node.
+
+### `node64.node.update.get` `GET /update`
+
+```swift
+func get() async throws -> JSONValue
+```
+
+Running version, origin, settings and the last check result.
+
+### `node64.node.update.check` `POST /update/check`
+
+```swift
+func check() async throws -> JSONValue
+```
+
+Checks for updates now. Fails with `502` when the check failed.
+
+### `node64.node.update.apply` `POST /update/apply`
+
+```swift
+func apply() async throws -> Node64.NodeUpdateStatus
+```
+
+Installs the newest version of the channel. **The node restarts.**
+
+### `node64.node.update.reset` `POST /update/reset`
+
+```swift
+func reset() async throws -> Node64.NodeUpdateStatus
+```
+
+Goes back to the version from the image. **The node restarts.**
+
+### `node64.node.update.updateSettings` `PUT /update/settings`
+
+```swift
+func updateSettings(mode: Node64.NodeUpdateMode? = nil, channel: Node64.NodeUpdateChannel? = nil, window: String? = nil) async throws -> JSONValue
+```
+
+Changes the update settings. Omitted fields stay unchanged (partial update).
+
+## `node64.node.users`
+
+Users of the node.
+
+### `node64.node.users.list` `GET /users`
+
+```swift
+func list() async throws -> [Node64.NodeUser]
+```
+
+Lists the users of this node (without password hash and secrets).
+
+### `node64.node.users.delete` `DELETE /users/{id}`
+
+```swift
+func delete(_ id: Int) async throws
+```
+
+Deletes another user. Your own user cannot be deleted (`409`); `404` for an unknown user.
+
+### `node64.node.users.me` `GET /users/me`
+
+```swift
+func me() async throws -> Node64.NodeUser
+```
+
+The signed-in user, or the owner of the API key.
+
+### `node64.node.users.updateMe` `PUT /users/me`
+
+```swift
+func updateMe(language: Node64.NodeUserLanguage? = nil, timezone: String? = nil) async throws -> Node64.NodeUser
+```
+
+Changes your own language and time zone. Omitted fields stay unchanged (partial update).
 
 ## `node64.ports`
 
@@ -2561,6 +3110,38 @@ func updateSettings(logDays: Int? = nil, anonymize: Bool? = nil) async throws ->
 
 Changes the access log settings. Fields left `nil` are not sent.
 
+### `node64.proxy64.docker` `GET /cdn64/docker`
+
+```swift
+func docker() async throws -> Node64.Proxy64Docker
+```
+
+State of the Docker sync: connection, containers with labels and settings.
+
+### `node64.proxy64.updateDocker` `PUT /cdn64/docker`
+
+```swift
+func updateDocker(enabled: Bool? = nil, traefik: Bool? = nil, dockerHost: String? = nil, certificate: String? = nil, acceptTOS: Bool? = nil) async throws -> Node64.Proxy64Docker
+```
+
+Changes the Docker sync. Fields you leave `nil` stay unchanged.
+
+### `node64.proxy64.protection` `GET /cdn64/protection`
+
+```swift
+func protection(days: Int? = nil) async throws -> Node64.Proxy64ProtectionStats
+```
+
+CDN64 statistics: what the CDN64 servers blocked for the names of the account, per name with WAF/JA4.
+
+### `node64.proxy64.release` `POST /cdn64/release`
+
+```swift
+func release(ip: String, from: Node64.Proxy64ReleaseSource? = nil) async throws -> Node64.CDNBlocklists
+```
+
+Lifts an automatic block and adds the address to the allow list.
+
 ## `node64.proxy64.accessLists`
 
 Access lists (basic auth users and IP rules).
@@ -2620,7 +3201,7 @@ State of the ipv64 blocklists.
 ### `node64.proxy64.blocklists.update` `PUT /cdn64/blocklists`
 
 ```swift
-func update(enabled: [String]? = nil, allow: [String]? = nil, token: String? = nil) async throws -> Node64.CDNBlocklists
+func update(enabled: [String]? = nil, allow: [String]? = nil, deny: [String]? = nil, token: String? = nil) async throws -> Node64.CDNBlocklists
 ```
 
 Switches blocklists on or off and sets exceptions.
@@ -2729,6 +3310,38 @@ func createHealthcheck(_ id: Int) async throws -> Node64.Proxy64HealthcheckResul
 
 Creates a health check for the target of this host (module Healthchecks).
 
+### `node64.proxy64.hosts.servers` `GET /cdn64/hosts/{id}/servers`
+
+```swift
+func servers(_ id: Int) async throws -> Node64.Proxy64Servers
+```
+
+CDN64 servers and connections per server for the names of a host.
+
+### `node64.proxy64.hosts.updateServers` `PUT /cdn64/hosts/{id}/servers`
+
+```swift
+func updateServers(_ id: Int, count: Int, sessions: Int? = nil) async throws -> Node64.Proxy64Servers
+```
+
+Sets CDN64 servers and connections per server for all names of a host.
+
+### `node64.proxy64.hosts.updateProtection` `PUT /cdn64/hosts/{id}/protection`
+
+```swift
+func updateProtection(_ id: Int, waf: Bool? = nil, ja4: Node64.CDNJA4Mode? = nil) async throws -> Node64.Proxy64HostProtection
+```
+
+Sets the CDN64 protection (pattern WAF, JA4) of the servers for all names of a host.
+
+### `node64.proxy64.hosts.addLocalDNS` `POST /cdn64/hosts/{id}/localdns`
+
+```swift
+func addLocalDNS(_ id: Int, ipv4: String? = nil, ipv6: String? = nil) async throws -> Node64.Proxy64LocalDNSResult
+```
+
+Enters the names of a host as own records in DNS64 (home network directly instead of via the internet).
+
 ## `node64.proxy64.limits`
 
 Overload protection (limits and bans).
@@ -2817,6 +3430,38 @@ func test(host: Int) async throws -> [Node64.CDNOnlineTest]
 
 Self-test over the internet: every name through every server and address.
 
+### `node64.proxy64.online.pause` `POST /cdn64/hosts/{id}/online/pause`
+
+```swift
+func pause(host: Int, paused: Bool) async throws
+```
+
+Pauses or resumes CDN64 for the names of a host (DNS goes directly to the server, settings stay).
+
+### `node64.proxy64.online.pauseName` `POST /cdn64/online/names/{rid}/pause`
+
+```swift
+func pauseName(remoteID: Int, paused: Bool) async throws
+```
+
+Pauses or resumes a name this node does not manage (mode 3 of ipv64.net, other nodes).
+
+### `node64.proxy64.online.servers` `GET /cdn64/online/servers`
+
+```swift
+func servers() async throws -> Node64.Proxy64Servers
+```
+
+CDN64 servers of the own tunnel (portal without a server per name).
+
+### `node64.proxy64.online.updateServers` `PUT /cdn64/online/servers`
+
+```swift
+func updateServers(count: Int, sessions: Int? = nil) async throws -> Node64.Proxy64Servers
+```
+
+Sets the CDN64 servers of the own tunnel.
+
 ## `node64.proxy64.streams`
 
 TCP/UDP streams.
@@ -2884,3 +3529,47 @@ func createHealthcheck(_ id: Int) async throws -> Node64.Proxy64HealthcheckResul
 ```
 
 Creates a health check for the target of this stream (module Healthchecks).
+
+## `node64.sonar64`
+
+Sonar64 measurement node: status, recent and inbound measurements, settings.
+
+### `node64.sonar64.status` `GET /sonar64/status`
+
+```swift
+func status() async throws -> Node64.Sonar64Status
+```
+
+State of the node, the own node at ipv64 and the trust level.
+
+### `node64.sonar64.recent` `GET /sonar64/recent`
+
+```swift
+func recent(n: Int? = nil) async throws -> Node64.Sonar64Recent
+```
+
+Latest own measurements and probes answered live on UDP 6464, newest first, without target addresses.
+
+### `node64.sonar64.inbound` `GET /sonar64/inbound`
+
+```swift
+func inbound(since: Date? = nil) async throws -> Node64.Sonar64Inbound
+```
+
+Who measured this node, taken from the results at ipv64.
+
+### `node64.sonar64.settings` `GET /sonar64/settings`
+
+```swift
+func settings() async throws -> Node64.Sonar64Settings
+```
+
+Local settings and the profile at ipv64.
+
+### `node64.sonar64.updateSettings` `PUT /sonar64/settings`
+
+```swift
+func updateSettings(_ input: Node64.Sonar64SettingsInput) async throws -> Node64.Sonar64Settings
+```
+
+Changes participation, role, budget, quiet hours and profile. Omitted fields stay unchanged (partial update).

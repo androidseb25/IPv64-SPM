@@ -1054,6 +1054,7 @@ Type of a check.
 - `.cert` = `"cert"`
 - `.push` = `"push"`
 - `.docker` = `"docker"`
+- `.whois` = `"whois"`
 
 ## `HC2Command` (struct)
 
@@ -1415,6 +1416,101 @@ Time range of check statistics.
 - `.last30Days` = `"30d"`
 - `.lastYear` = `"1y"`
 
+## `HC2StatusGroup` (struct)
+
+A group of checks on a Healthchecks 2.0 status page. Used in responses and in `HC2StatusPageInput/groups`.
+
+- `name: String?` – Heading of the group; empty means no heading.
+- `tokens: [String]` – Tokens of the checks in display order (no Docker/Proxmox checks).
+
+## `HC2StatusNotice` (struct)
+
+A notice (info, maintenance or incident) on a status page.
+
+- `id: Int` – Notice ID.
+- `kind: HC2StatusNoticeKind?` – Kind.
+- `title: String?` – Title.
+- `body: String?` – Text.
+- `resolved: Bool?` – Resolved; stays on the page for another 7 days.
+- `createdAt: Date?` – Creation time.
+- `resolvedAt: Date?` – Time it was resolved, `nil` while open.
+
+## `HC2StatusNoticeInput` (struct)
+
+Request body for creating or updating a status page notice. Only non-`nil` fields are sent.
+
+- `kind: HC2StatusNoticeKind?` – Kind.
+- `title: String?` – Title, at most 200 characters; required when creating.
+- `body: String?` – Text, at most 2000 characters.
+- `resolved: Bool?` – Resolved; stays on the page for another 7 days.
+
+## `HC2StatusNoticeKind` (open enum)
+
+Kind of a status page notice.
+
+- `.info` = `"info"`
+- `.maintenance` = `"maintenance"`
+- `.incident` = `"incident"`
+
+## `HC2StatusPage` (struct)
+
+A Healthchecks 2.0 status page.
+
+- `id: Int` – Status page ID.
+- `slug: String?` – Address (unique across all accounts).
+- `url: String?` – Public page, `https://ipv64.net/healthchecks2/status/<slug>`.
+- `jsonURL: String?` – The same data as JSON (public).
+- `title: String?` – Title.
+- `description: String?` – Description.
+- `lang: HC2StatusPageLanguage?` – Language.
+- `theme: HC2StatusPageTheme?` – Color theme.
+- `layout: HC2StatusPageLayout?` – Layout.
+- `published: Bool?`
+- `showHistory: Bool?` – Show incidents of the last 14 days.
+- `autorefresh: Bool?` – Reload the page every minute.
+- `previewURL: String?` – Address with preview key (also for hidden pages); do not share.
+- `groups: [HC2StatusGroup]?` – Groups of checks; only present when a single page is fetched.
+- `createdAt: Date?` – Creation time.
+- `updatedAt: Date?` – Last change.
+
+## `HC2StatusPageInput` (struct)
+
+Request body for creating or updating a Healthchecks 2.0 status page. Only non-`nil` fields are sent.
+
+- `title: String?` – Title, at most 120 characters; required when creating.
+- `slug: String?` – Address (`^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$`), unique across all accounts; random when omitted on create.
+- `description: String?` – Description, at most 1000 characters.
+- `groups: [HC2StatusGroup]?` – Groups (at most 20, at most 100 checks per page, each check once).
+- `lang: HC2StatusPageLanguage?` – Language.
+- `theme: HC2StatusPageTheme?` – Color theme.
+- `layout: HC2StatusPageLayout?` – Layout.
+- `published: Bool?` – Publish the page.
+- `showHistory: Bool?` – Show incidents of the last 14 days.
+- `autorefresh: Bool?` – Reload the page every minute.
+
+## `HC2StatusPageLanguage` (open enum)
+
+Language of a Healthchecks 2.0 status page.
+
+- `.auto` = `"auto"`
+- `.de` = `"de"`
+- `.en` = `"en"`
+
+## `HC2StatusPageLayout` (open enum)
+
+Layout of a Healthchecks 2.0 status page.
+
+- `.list` = `"list"`
+- `.cards` = `"cards"`
+
+## `HC2StatusPageTheme` (open enum)
+
+Color theme of a Healthchecks 2.0 status page.
+
+- `.auto` = `"auto"`
+- `.light` = `"light"`
+- `.dark` = `"dark"`
+
 ## `HC2Testrun` (struct)
 
 A test run started when moving a check to another execution location.
@@ -1672,6 +1768,7 @@ Sensor profile.
 - `.standard` = `"standard"`
 - `.full` = `"full"`
 - `.custom` = `"custom"`
+- `.proxy` = `"proxy"`
 
 ## `HoneypotReportAccepted` (struct)
 
@@ -2521,6 +2618,7 @@ An early-warning alert.
 - `firstSeen: String?` – First sighting (`yyyy-MM-dd`, UTC).
 - `lastSeen: String?` – Last sighting (`yyyy-MM-dd`, UTC).
 - `createdAt: Date?` – Creation time.
+- `details: ThreatWatchAlertDetails?` – Why the IP stood out (last 14 days); `nil` for older alerts.
 
 ## `ThreatWatchAlert.Source` (open enum)
 
@@ -2528,6 +2626,38 @@ Origin of an alert.
 
 - `.network` = `"network"`
 - `.dyndns` = `"dyndns"`
+
+## `ThreatWatchAlertDetails` (struct)
+
+Why an IP triggered an alert: counts and per-origin breakdown, never sensors, accounts or contents.
+
+- `accounts: Int?` – Number of reporting accounts.
+- `sensors: Int?` – Number of sensors.
+- `events: Int?` – Number of events.
+- `lists: [String]?` – Lists the IP is on, e.g. `v64`, `ssh`.
+- `reason: String?` – Reason for the rating, e.g. `threshold`, `customer_ip`, `allowlist`.
+- `seen: [Seen]?` – At most 8 rows, most frequent first.
+
+## `ThreatWatchAlertDetails.Seen` (struct)
+
+One row of what was seen.
+
+- `origin: Origin?` – Where the sighting came from.
+- `service: String?` – Service, e.g. `ssh`.
+- `port: Int?` – Port, e.g. `22`.
+- `kind: String?` – Attack kind, e.g. `ssh:bruteforce`.
+- `rule: String?` – Rule of the log sensor, otherwise empty.
+- `count: Int?` – Number of sightings.
+- `sensors: Int?` – Number of sensors.
+- `last: Date?` – Last sighting.
+
+## `ThreatWatchAlertDetails.Seen.Origin` (open enum)
+
+Origin of a sighting.
+
+- `.honeypot` = `"honeypot"`
+- `.log` = `"log"`
+- `.syslog` = `"syslog"`
 
 ## `ThreatWatchAlerts` (struct)
 

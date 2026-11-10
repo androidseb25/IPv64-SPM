@@ -19,7 +19,7 @@ extension Node64.HC.Proxmox {
 extension Node64.HC.Proxmox.Systems {
     /// Lists Proxmox systems with the state of the last query (without secret).
     ///
-    /// - Parameter kind: `.pve` (default), `.docker` or `.all`.
+    /// - Parameter kind: `.pve` (default), `.pbs`, `.docker` or `.all`.
     ///
     /// `GET /healthchecks/proxmox/systems`
     public func list(kind: Node64.PVEKindFilter? = nil) async throws -> [Node64.PVESystem] {
@@ -56,6 +56,14 @@ extension Node64.HC.Proxmox.Systems {
     /// `DELETE /healthchecks/proxmox/systems/{id}`
     public func delete(_ id: Int) async throws {
         try await client.sendWithoutContent(Request(.delete, "/healthchecks/proxmox/systems/\(id)"))
+    }
+
+    /// Adds every guest (or, with `scope: .nodes`, every node) of the last query that is not yet a check
+    /// as a check (without templates). Already monitored entries stay; a second call adds nothing twice.
+    ///
+    /// `POST /healthchecks/proxmox/systems/{id}/ascheck-all`
+    public func asCheckAll(_ id: Int, scope: Node64.PVEAsCheckScope? = nil) async throws -> Node64.PVEAsCheckAllResult {
+        try await client.send(Request(.post, "/healthchecks/proxmox/systems/\(id)/ascheck-all", query: [QueryItem("scope", scope)]))
     }
 
     /// Returns the system with its nodes and guests from the last query.
@@ -132,7 +140,7 @@ extension Node64.HC.Proxmox.Systems {
 extension Node64.HC.Proxmox {
     /// Tests a connection: fetches certificate fingerprint, version, cluster, nodes and guests.
     ///
-    /// With `systemID` and no secret the stored secret is used. Not needed for Docker hosts (422).
+    /// With `systemID` and no secret the stored secret is used. Not needed for Docker hosts (422). `input.kind` selects `pve` or `pbs`.
     ///
     /// `POST /healthchecks/proxmox/probe`
     public func probe(_ input: Node64.PVESystemInput, systemID: Int? = nil) async throws -> Node64.PVEProbe {
@@ -140,21 +148,25 @@ extension Node64.HC.Proxmox {
         return try await client.send(Request(.post, "/healthchecks/proxmox/probe", body: .json(body)))
     }
 
-    private struct ProbeBody: Encodable, Sendable {
+    struct ProbeBody: Encodable, Sendable {
         let input: Node64.PVESystemInput
         let systemID: Int?
 
         enum CodingKeys: String, CodingKey {
-            case name, addresses
+            case kind, name, addresses
             case tokenID = "token_id"
             case secret
             case pinSHA256 = "pin_sha256"
             case interval, enabled
+            case privateKey = "private_key"
+            case cert, ca
+            case generateKey = "generate_key"
             case systemID = "system_id"
         }
 
         func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(input.kind, forKey: .kind)
             try container.encodeIfPresent(input.name, forKey: .name)
             try container.encodeIfPresent(input.addresses, forKey: .addresses)
             try container.encodeIfPresent(input.tokenID, forKey: .tokenID)
@@ -162,6 +174,10 @@ extension Node64.HC.Proxmox {
             try container.encodeIfPresent(input.pinSHA256, forKey: .pinSHA256)
             try container.encodeIfPresent(input.interval, forKey: .interval)
             try container.encodeIfPresent(input.enabled, forKey: .enabled)
+            try container.encodeIfPresent(input.privateKey, forKey: .privateKey)
+            try container.encodeIfPresent(input.cert, forKey: .cert)
+            try container.encodeIfPresent(input.ca, forKey: .ca)
+            try container.encodeIfPresent(input.generateKey, forKey: .generateKey)
             try container.encodeIfPresent(systemID, forKey: .systemID)
         }
     }

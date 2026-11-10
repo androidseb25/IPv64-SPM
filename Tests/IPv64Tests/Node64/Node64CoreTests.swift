@@ -78,6 +78,26 @@ struct Node64CoreTests {
         #expect(error?.errorDescription == "Bitte API-Key hinterlegen.")
     }
 
+    @Test("Honeypot64 {error, message} documents keep the message as text")
+    func messageDocument() async throws {
+        let transport = MockTransport(
+            status: 409,
+            json: #"{"error":"no_key","message":"Kein ipv64-API-Key hinterlegt."}"#,
+            headers: ["Content-Type": "application/json"]
+        )
+
+        let error = await #expect(throws: Node64Error.self) {
+            try await Node64.mock(transport).honeypot.watch.list()
+        }
+
+        guard case .api(let document) = error else {
+            Issue.record("Expected an API error, got \(String(describing: error))")
+            return
+        }
+        #expect(document.error == "no_key")
+        #expect(document.text == "Kein ipv64-API-Key hinterlegt.")
+    }
+
     @Test("Validation errors keep per-field messages")
     func fieldErrors() async throws {
         let transport = MockTransport(status: 400, json: #"{"error":"invalid","fields":{"port":"out of range"}}"#)

@@ -133,7 +133,9 @@ struct ThreatTests {
         let transport = MockTransport(json: """
         {"data":{"alerts":[{"id":7,"ip":"203.0.113.9","cidr":"203.0.113.0/24","network_id":null,"source":"dyndns",
         "label":"x.ipv64.net","listed":true,"score":72,"kinds":["ssh:bruteforce"],"first_seen":"2026-10-19",
-        "last_seen":"2026-10-20","created_at":"2026-10-20T12:12:03Z"}],"next":"2026-10-20T12:12:03Z_42"}}
+        "last_seen":"2026-10-20","created_at":"2026-10-20T12:12:03Z",
+        "details":{"accounts":2,"sensors":3,"events":40,"lists":["v64","ssh"],"reason":"threshold",
+        "seen":[{"origin":"honeypot","service":"ssh","port":22,"kind":"ssh:bruteforce","rule":"","count":30,"sensors":2,"last":"2026-10-20T11:00:00Z"}]}}],"next":"2026-10-20T12:12:03Z_42"}}
         """)
         let alerts = try await IPv64.mock(transport).threat.watch.alerts(since: "2026-10-20T12:12:03Z_42")
 
@@ -141,6 +143,11 @@ struct ThreatTests {
         #expect(alert.id == 7)
         #expect(alert.networkID == nil)
         #expect(alert.source == .dyndns)
+        #expect(alert.details?.events == 40)
+        #expect(alert.details?.lists == ["v64", "ssh"])
+        #expect(alert.details?.seen?.first?.origin == .honeypot)
+        #expect(alert.details?.seen?.first?.port == 22)
+        #expect(alert.details?.seen?.first?.last != nil)
         #expect(alerts.next == "2026-10-20T12:12:03Z_42")
         let url = try #require(transport.lastRequest?.url)
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems

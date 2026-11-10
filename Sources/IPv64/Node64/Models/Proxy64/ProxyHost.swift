@@ -16,6 +16,8 @@ extension Node64 {
         public static let passthrough: Self = "passthrough"
         /// Serves a status page of the Healthchecks module.
         public static let status: Self = "status"
+        /// Only a name for streams (CDN64 names without a web target).
+        public static let stream: Self = "stream"
     }
 
     /// URL scheme of a proxy target (`http` or `https`).
@@ -150,6 +152,16 @@ extension Node64 {
         public var websockets: Bool?
         /// Access list ID; `0` = same as the host.
         public var accessListID: Int?
+        /// What happens with the path: `""` = forward to the target (default), `block` = error page, `respond` = fixed answer.
+        public var action: CDNLocationAction?
+        /// `block`: 400-499 (default 403); `respond`: 200-599 (default 200).
+        public var status: Int?
+        /// `respond`: content, at most 64 KB.
+        public var body: String?
+        /// `respond`: content type, default `text/plain; charset=utf-8`.
+        public var contentType: String?
+        /// Own values of the location (action `""` only); unset values come from the host.
+        public var advanced: CDNLocationAdvanced?
 
         /// Creates an instance; pass only the fields you want to set.
         public init(
@@ -159,7 +171,12 @@ extension Node64 {
             targetPort: Int? = nil,
             forwardPath: String? = nil,
             websockets: Bool? = nil,
-            accessListID: Int? = nil
+            accessListID: Int? = nil,
+            action: CDNLocationAction? = nil,
+            status: Int? = nil,
+            body: String? = nil,
+            contentType: String? = nil,
+            advanced: CDNLocationAdvanced? = nil
         ) {
             self.path = path
             self.scheme = scheme
@@ -168,6 +185,11 @@ extension Node64 {
             self.forwardPath = forwardPath
             self.websockets = websockets
             self.accessListID = accessListID
+            self.action = action
+            self.status = status
+            self.body = body
+            self.contentType = contentType
+            self.advanced = advanced
         }
 
         enum CodingKeys: String, CodingKey {
@@ -177,7 +199,95 @@ extension Node64 {
             case forwardPath = "forward_path"
             case websockets
             case accessListID = "access_list_id"
+            case action, status, body
+            case contentType = "content_type"
+            case advanced
         }
+    }
+
+    /// What a location does with its path (`action` of ``CDNLocation``).
+    public struct CDNLocationAction: IPv64OpenEnum {
+        public let rawValue: String
+        public init(rawValue: String) { self.rawValue = rawValue }
+
+        /// Forward to the target (empty string, default).
+        public static let forward: Self = ""
+        /// Block with an error page (no target needed).
+        public static let block: Self = "block"
+        /// Answer with a fixed response (no target needed).
+        public static let respond: Self = "respond"
+    }
+
+    /// Buffering of a location (`buffering` of ``CDNLocationAdvanced``).
+    public struct CDNLocationBuffering: IPv64OpenEnum {
+        public let rawValue: String
+        public init(rawValue: String) { self.rawValue = rawValue }
+
+        /// Same as the host (empty string).
+        public static let inherit: Self = ""
+        public static let on: Self = "on"
+        /// Pass on immediately (streaming, ActiveSync).
+        public static let off: Self = "off"
+    }
+
+    /// Own advanced values of a location (`advanced` of ``CDNLocation``); unset values come from the host.
+    ///
+    /// Headers are added to those of the host (same name: the location's wins).
+    public struct CDNLocationAdvanced: Codable, Hashable, Sendable {
+        /// Timeout until the target answers in seconds; `0` = like the host.
+        public var timeoutSeconds: Int?
+        /// Maximum request body in MB; `0` = like the host, `-1` = unlimited.
+        public var maxBodyMB: Int?
+        /// Buffering; `""` = like the host.
+        public var buffering: CDNLocationBuffering?
+        /// Headers added to the request.
+        public var requestHeaders: [CDNHeader]?
+        /// Request headers to remove.
+        public var requestRemove: [String]?
+        /// Headers added to the response.
+        public var responseHeaders: [CDNHeader]?
+        /// Response headers to remove.
+        public var responseRemove: [String]?
+
+        /// Creates an instance; pass only the fields you want to set.
+        public init(
+            timeoutSeconds: Int? = nil,
+            maxBodyMB: Int? = nil,
+            buffering: CDNLocationBuffering? = nil,
+            requestHeaders: [CDNHeader]? = nil,
+            requestRemove: [String]? = nil,
+            responseHeaders: [CDNHeader]? = nil,
+            responseRemove: [String]? = nil
+        ) {
+            self.timeoutSeconds = timeoutSeconds
+            self.maxBodyMB = maxBodyMB
+            self.buffering = buffering
+            self.requestHeaders = requestHeaders
+            self.requestRemove = requestRemove
+            self.responseHeaders = responseHeaders
+            self.responseRemove = responseRemove
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case timeoutSeconds = "timeout_seconds"
+            case maxBodyMB = "max_body_mb"
+            case buffering
+            case requestHeaders = "request_headers"
+            case requestRemove = "request_remove"
+            case responseHeaders = "response_headers"
+            case responseRemove = "response_remove"
+        }
+    }
+
+    /// Maintenance page style (`maintenance_style` of ``CDNAdvanced``).
+    public struct CDNMaintenanceStyle: IPv64OpenEnum {
+        public let rawValue: String
+        public init(rawValue: String) { self.rawValue = rawValue }
+
+        public static let matrix: Self = "matrix"
+        public static let gear: Self = "gear"
+        /// Own HTML (``CDNAdvanced/maintenanceHTML``).
+        public static let custom: Self = "custom"
     }
 
     /// Advanced settings of a proxy host. Schema `CDNAdvanced`.
@@ -216,6 +326,24 @@ extension Node64 {
         public var aiBotsAllowUser: Bool?
         /// Serve a `/robots.txt` disallowing all AI bots when the target has none. Proxy hosts only.
         public var aiRobots: Bool?
+        /// Bandwidth to the visitor (download) in Mbit/s for all requests of the host together; `0` = unlimited, 0-100000.
+        public var bwDownMbit: Int?
+        /// Bandwidth from the visitor (upload) in Mbit/s; `0` = unlimited, 0-100000.
+        public var bwUpMbit: Int?
+        /// Own error page (proxy hosts only) instead of the neutral page for 502/503/504 of PROXY64, at most 64 KB.
+        public var errorHTML: String?
+        /// Also replace 5xx answers of the target by ``errorHTML`` (the status code stays).
+        public var errorOverride: Bool?
+        /// Maintenance mode (proxy hosts only): maintenance page (503) instead of the target.
+        public var maintenance: Bool?
+        /// Own HTML for style `custom`, at most 64 KB.
+        public var maintenanceHTML: String?
+        /// Maintenance page style, default `matrix`.
+        public var maintenanceStyle: CDNMaintenanceStyle?
+        /// Proxy hosts only: answer only the locations, all other paths 404 (needs at least one location).
+        public var onlyLocations: Bool?
+        /// Proxy hosts only: path put before every request (`/recipes`: `/soup` becomes `/recipes/soup` at the target).
+        public var targetPath: String?
 
         /// Creates an instance; pass only the fields you want to set.
         public init(
@@ -235,7 +363,16 @@ extension Node64 {
             geoCountries: [String]? = nil,
             aiBots: Bool? = nil,
             aiBotsAllowUser: Bool? = nil,
-            aiRobots: Bool? = nil
+            aiRobots: Bool? = nil,
+            bwDownMbit: Int? = nil,
+            bwUpMbit: Int? = nil,
+            errorHTML: String? = nil,
+            errorOverride: Bool? = nil,
+            maintenance: Bool? = nil,
+            maintenanceHTML: String? = nil,
+            maintenanceStyle: CDNMaintenanceStyle? = nil,
+            onlyLocations: Bool? = nil,
+            targetPath: String? = nil
         ) {
             self.requestHeaders = requestHeaders
             self.requestRemove = requestRemove
@@ -254,6 +391,15 @@ extension Node64 {
             self.aiBots = aiBots
             self.aiBotsAllowUser = aiBotsAllowUser
             self.aiRobots = aiRobots
+            self.bwDownMbit = bwDownMbit
+            self.bwUpMbit = bwUpMbit
+            self.errorHTML = errorHTML
+            self.errorOverride = errorOverride
+            self.maintenance = maintenance
+            self.maintenanceHTML = maintenanceHTML
+            self.maintenanceStyle = maintenanceStyle
+            self.onlyLocations = onlyLocations
+            self.targetPath = targetPath
         }
 
         enum CodingKeys: String, CodingKey {
@@ -274,6 +420,15 @@ extension Node64 {
             case aiBots = "ai_bots"
             case aiBotsAllowUser = "ai_bots_allow_user"
             case aiRobots = "ai_robots"
+            case bwDownMbit = "bw_down_mbit"
+            case bwUpMbit = "bw_up_mbit"
+            case errorHTML = "error_html"
+            case errorOverride = "error_override"
+            case maintenance
+            case maintenanceHTML = "maintenance_html"
+            case maintenanceStyle = "maintenance_style"
+            case onlyLocations = "only_locations"
+            case targetPath = "target_path"
         }
     }
 

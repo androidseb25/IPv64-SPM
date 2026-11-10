@@ -79,6 +79,37 @@ extension Node64 {
         }
     }
 
+    /// Result of ``Node64/Link/startCodeLink()``.
+    public struct LinkCode: Codable, Hashable, Sendable {
+        /// Code to enter in the ipv64.net portal.
+        public let code: String?
+        /// Expiry of the code.
+        public let expiresAt: Date?
+        /// Hub address.
+        public let hub: String?
+
+        enum CodingKeys: String, CodingKey {
+            case code, hub
+            case expiresAt = "expires_at"
+        }
+    }
+
+    /// Result of ``Node64/Link/codeStatus()``.
+    public struct LinkCodeStatus: Codable, Hashable, Sendable {
+        /// The node is linked.
+        public let linked: Bool?
+        /// The node is connected to the hub.
+        public let connected: Bool?
+        /// Open link code.
+        public let code: String?
+        /// Hub address.
+        public let hub: String?
+        /// Last error.
+        public let error: String?
+        /// A link request is in progress.
+        public let requesting: Bool?
+    }
+
     /// Which version wins when resolving a sync conflict.
     public struct LinkConflictResolution: IPv64OpenEnum {
         public let rawValue: String

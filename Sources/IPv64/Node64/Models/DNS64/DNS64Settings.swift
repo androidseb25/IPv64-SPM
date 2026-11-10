@@ -120,6 +120,8 @@ extension Node64 {
         public let upstreams: [DNS64Upstream]?
         /// Blocklists.
         public let lists: [DNS64List]?
+        /// Allow lists: domains that no blocklist blocks (the own deny list takes precedence).
+        public let allowLists: [DNS64List]?
         /// Hours between blocklist updates.
         public let listHours: Int?
         /// Answer for blocked domains.
@@ -162,12 +164,19 @@ extension Node64 {
         public let certID: Int?
         /// Answer `use-application-dns.net` with NXDOMAIN so Firefox disables its own DoH (default on).
         public let firefoxCanary: Bool?
+        /// mDNS bridge enabled (answers local names via multicast DNS).
+        public let mdns: Bool?
+        /// Docker integration enabled (entries from `node64.dns.name` container labels).
+        public let docker: Bool?
+        /// IP address used for Docker entries.
+        public let dockerIP: String?
 
         enum CodingKeys: String, CodingKey {
             case port, bind, router
             case retentionDays = "retention_days"
             case upstreamMode = "upstream_mode"
             case upstreams, lists
+            case allowLists = "allow_lists"
             case listHours = "list_hours"
             case blockMode = "block_mode"
             case cacheSize = "cache_size"
@@ -187,6 +196,8 @@ extension Node64 {
             case upstreamCount = "upstream_count"
             case certID = "cert_id"
             case firefoxCanary = "firefox_canary"
+            case mdns, docker
+            case dockerIP = "docker_ip"
         }
     }
 
@@ -208,6 +219,8 @@ extension Node64 {
         public var upstreams: [DNS64Upstream]?
         /// Replaces the whole blocklist list. Read it with ``Node64/DNS64/settings()``, modify it and send the complete list back.
         public var lists: [DNS64List]?
+        /// Replaces the whole allow list list. Read it with ``Node64/DNS64/settings()``, modify it and send the complete list back.
+        public var allowLists: [DNS64List]?
         /// Hours between blocklist updates.
         public var listHours: Int?
         /// Answer for blocked domains.
@@ -250,6 +263,12 @@ extension Node64 {
         public var certID: Int?
         /// Answer `use-application-dns.net` with NXDOMAIN so Firefox disables its own DoH (default on).
         public var firefoxCanary: Bool?
+        /// mDNS bridge enabled (answers local names via multicast DNS).
+        public var mdns: Bool?
+        /// Docker integration enabled (entries from `node64.dns.name` container labels).
+        public var docker: Bool?
+        /// IP address used for Docker entries.
+        public var dockerIP: String?
 
         /// Creates a settings change; only fields you set are sent and changed.
         public init(
@@ -260,6 +279,7 @@ extension Node64 {
             upstreamMode: DNS64UpstreamMode? = nil,
             upstreams: [DNS64Upstream]? = nil,
             lists: [DNS64List]? = nil,
+            allowLists: [DNS64List]? = nil,
             listHours: Int? = nil,
             blockMode: DNS64BlockMode? = nil,
             cacheSize: Int? = nil,
@@ -280,7 +300,10 @@ extension Node64 {
             acmeStaging: Bool? = nil,
             upstreamCount: Int? = nil,
             certID: Int? = nil,
-            firefoxCanary: Bool? = nil
+            firefoxCanary: Bool? = nil,
+            mdns: Bool? = nil,
+            docker: Bool? = nil,
+            dockerIP: String? = nil
         ) {
             self.port = port
             self.bind = bind
@@ -289,6 +312,7 @@ extension Node64 {
             self.upstreamMode = upstreamMode
             self.upstreams = upstreams
             self.lists = lists
+            self.allowLists = allowLists
             self.listHours = listHours
             self.blockMode = blockMode
             self.cacheSize = cacheSize
@@ -310,6 +334,9 @@ extension Node64 {
             self.upstreamCount = upstreamCount
             self.certID = certID
             self.firefoxCanary = firefoxCanary
+            self.mdns = mdns
+            self.docker = docker
+            self.dockerIP = dockerIP
         }
 
         enum CodingKeys: String, CodingKey {
@@ -317,6 +344,7 @@ extension Node64 {
             case retentionDays = "retention_days"
             case upstreamMode = "upstream_mode"
             case upstreams, lists
+            case allowLists = "allow_lists"
             case listHours = "list_hours"
             case blockMode = "block_mode"
             case cacheSize = "cache_size"
@@ -336,6 +364,8 @@ extension Node64 {
             case upstreamCount = "upstream_count"
             case certID = "cert_id"
             case firefoxCanary = "firefox_canary"
+            case mdns, docker
+            case dockerIP = "docker_ip"
         }
     }
 }

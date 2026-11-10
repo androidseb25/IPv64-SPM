@@ -64,6 +64,24 @@ Action of an access rule.
 - `.allow` = `"allow"`
 - `.deny` = `"deny"`
 
+## `Node64.CDNAccessAuth` (open enum)
+
+Forward-auth login service of an access list (`auth`).
+
+- `.users` = `""`
+- `.authentik` = `"authentik"`
+- `.authelia` = `"authelia"`
+- `.oauth2Proxy` = `"oauth2-proxy"`
+- `.custom` = `"custom"`
+
+## `Node64.CDNAccessForward` (struct)
+
+Settings of the login service for forward auth (`forward` of `CDNAccessListInput`).
+
+- `address: String?` – Check address, e.g. `http://authentik-server:9000/outpost.goauthentik.io/auth/traefik`.
+- `headers: [String]?` – Response headers that go to the target.
+- `callback: String?` – Path of the return route on the host.
+
 ## `Node64.CDNAccessList` (struct)
 
 An access list (without passwords). Schema `CDNAccessList`.
@@ -76,6 +94,7 @@ An access list (without passwords). Schema `CDNAccessList`.
 - `rules: [CDNAccessRule]?` – IP rules of the list.
 - `createdAt: Date?` – Creation time.
 - `updatedAt: Date?` – Time of the last update.
+- `addKey: String?` – The new access key, only in the answer to a create or update with `CDNAccessListInput/addKey`. It is shown once; treat it as a secret. Not in the spec's response schema.
 
 ## `Node64.CDNAccessListEntry` (struct)
 
@@ -93,6 +112,12 @@ Writable fields of an access list. Schema `CDNAccessListInput`.
 - `passAuth: Bool?` – Pass the authorization header on to the target.
 - `users: [CDNAccessListUserInput]?` – Replaces the users; `nil` = unchanged.
 - `rules: [CDNAccessRule]?` – IP rules of the list.
+- `loginPage: Bool?` – Sign in on a login page instead of the browser dialog.
+- `auth: CDNAccessAuth?` – Login service (forward auth); `""` = users of the list.
+- `forward: CDNAccessForward?` – Settings of the login service.
+- `passUser: Bool?` – Pass Remote-User, -Email, -Groups and -Name on to the target.
+- `addKey: String?` – Name of a new access key. The node returns the key once in `Node64/CDNAccessList/addKey`.
+- `removeKeys: [String]?` – Access keys to delete (start of the key or hint).
 
 ## `Node64.CDNAccessListUser` (struct)
 
@@ -135,6 +160,15 @@ Advanced settings of a proxy host. Schema `CDNAdvanced`.
 - `aiBots: Bool?` – Reject AI bots (403) by user agent. Proxy, redirect and status hosts only.
 - `aiBotsAllowUser: Bool?` – Let requests made on behalf of a user pass the AI bot filter.
 - `aiRobots: Bool?` – Serve a `/robots.txt` disallowing all AI bots when the target has none. Proxy hosts only.
+- `bwDownMbit: Int?` – Bandwidth to the visitor (download) in Mbit/s for all requests of the host together; `0` = unlimited, 0-100000.
+- `bwUpMbit: Int?` – Bandwidth from the visitor (upload) in Mbit/s; `0` = unlimited, 0-100000.
+- `errorHTML: String?` – Own error page (proxy hosts only) instead of the neutral page for 502/503/504 of PROXY64, at most 64 KB.
+- `errorOverride: Bool?` – Also replace 5xx answers of the target by `errorHTML` (the status code stays).
+- `maintenance: Bool?` – Maintenance mode (proxy hosts only): maintenance page (503) instead of the target.
+- `maintenanceHTML: String?` – Own HTML for style `custom`, at most 64 KB.
+- `maintenanceStyle: CDNMaintenanceStyle?` – Maintenance page style, default `matrix`.
+- `onlyLocations: Bool?` – Proxy hosts only: answer only the locations, all other paths 404 (needs at least one location).
+- `targetPath: String?` – Proxy hosts only: path put before every request (`/recipes`: `/soup` becomes `/recipes/soup` at the target).
 
 ## `Node64.CDNBlocklist` (struct)
 
@@ -189,6 +223,8 @@ State of the ipv64 blocklists. Schema `CDNBlocklists`.
 
 - `lists: [CDNBlocklist]?` – The ipv64 blocklists.
 - `allow: [String]?` – Exceptions: IP addresses or networks.
+- `deny: [String]?` – Own deny list: IP addresses or networks rejected for all hosts and streams (the allow list wins).
+- `denied: Int?` – Rejected by the own deny list since the start.
 - `blocked: Int?` – Rejected since the start.
 - `active: Bool?` – At least one list is loaded and enabled.
 - `countries: [CDNBlocklistCountry]?` – Country lists used by the country filter.
@@ -220,10 +256,21 @@ A blocked IP of the honeypot.
 - `since: Date?` – Blocked since.
 - `until: Date?` – Blocked until.
 
+## `Node64.CDNHoneypotRoute` (struct)
+
+Which rejections go to the honeypot (`route` of `CDNHoneypotSettings`). Missing = default (everything except `geo`).
+
+- `blocklist: Bool?` – Rejections by the blocklists.
+- `honeypot: Bool?` – Rejections of IPs the honeypot reported.
+- `exploit: Bool?` – Rejections of exploit attempts.
+- `aiBot: Bool?` – Rejections of AI bots.
+- `geo: Bool?` – Rejections by the country filter.
+
 ## `Node64.CDNHoneypotSettings` (struct)
 
 Honeypot64 settings. Schema `CDNHoneypotSettings`.
 
+- `route: CDNHoneypotRoute?` – Which rejections are handed to the honeypot.
 - `decoy: Bool?` – Send requests without a matching host to the Honeypot64 web decoy.
 - `access: Bool?` – Send access metadata to the Honeypot64 log sensor.
 - `block: Bool?` – Block IPs reported by the honeypot locally right away.
@@ -253,6 +300,15 @@ A health check that watches the target of a host. Schema `CDNHostWatch`.
 - `local: Bool?` – Runs on this node (not on ipv64.net or another node).
 - `hostOnly: Bool?` – Ping: only the host matches.
 - `lastCheck: Date?` – Time of the last check.
+
+## `Node64.CDNJA4Mode` (open enum)
+
+JA4 handling of CDN64 (`off`, `count`, `block`).
+
+- `.unset` = `""`
+- `.off` = `"off"`
+- `.count` = `"count"`
+- `.block` = `"block"`
 
 ## `Node64.CDNLimitBan` (struct)
 
@@ -297,6 +353,47 @@ A path-specific target of a proxy host. Schema `CDNLocation`.
 - `forwardPath: String?` – Replaces the path at the target.
 - `websockets: Bool?` – Whether WebSockets are passed.
 - `accessListID: Int?` – Access list ID; `0` = same as the host.
+- `action: CDNLocationAction?` – What happens with the path: `""` = forward to the target (default), `block` = error page, `respond` = fixed answer.
+- `status: Int?`
+- `body: String?`
+- `contentType: String?`
+- `advanced: CDNLocationAdvanced?` – Own values of the location (action `""` only); unset values come from the host.
+
+## `Node64.CDNLocationAction` (open enum)
+
+What a location does with its path (`action` of `CDNLocation`).
+
+- `.forward` = `""`
+- `.block` = `"block"`
+- `.respond` = `"respond"`
+
+## `Node64.CDNLocationAdvanced` (struct)
+
+Own advanced values of a location (`advanced` of `CDNLocation`); unset values come from the host.
+
+- `timeoutSeconds: Int?` – Timeout until the target answers in seconds; `0` = like the host.
+- `maxBodyMB: Int?` – Maximum request body in MB; `0` = like the host, `-1` = unlimited.
+- `buffering: CDNLocationBuffering?` – Buffering; `""` = like the host.
+- `requestHeaders: [CDNHeader]?` – Headers added to the request.
+- `requestRemove: [String]?` – Request headers to remove.
+- `responseHeaders: [CDNHeader]?` – Headers added to the response.
+- `responseRemove: [String]?` – Response headers to remove.
+
+## `Node64.CDNLocationBuffering` (open enum)
+
+Buffering of a location (`buffering` of `CDNLocationAdvanced`).
+
+- `.inherit` = `""`
+- `.on` = `"on"`
+- `.off` = `"off"`
+
+## `Node64.CDNMaintenanceStyle` (open enum)
+
+Maintenance page style (`maintenance_style` of `CDNAdvanced`).
+
+- `.matrix` = `"matrix"`
+- `.gear` = `"gear"`
+- `.custom` = `"custom"`
 
 ## `Node64.CDNOnlineDomainQuota` (struct)
 
@@ -315,6 +412,8 @@ Connection to an edge server.
 - `connected: Bool?` – Whether the edge connection is up.
 - `transport: CDNOnlineTransport?` – Transport used for the connection.
 - `total: Int?` – Streams since the start.
+- `rttMs: Double?` – Round-trip time to the server in ms.
+- `lossPct: Double?` – Packet loss from the node to this server over the last 30 s in percent (visitor downloads); `-1` = unknown.
 
 ## `Node64.CDNOnlineEdgeInput` (struct)
 
@@ -447,6 +546,30 @@ ACME account (email and terms of service).
 - `tosAccepted: Bool?` – Whether the terms of service are accepted.
 - `tosAt: Date?` – When the terms were accepted.
 - `tosURL: String?` – URL of the terms of service.
+
+## `Node64.CertDNSCheck` (struct)
+
+Own resolvers of the DNS-01 check. Schema of `GET /certs/dns-check`.
+
+- `resolvers: [String]?` – Own resolvers: IP addresses (port 53) or `https://`, `tls://`, `quic://` URLs. Empty = built-in ones only.
+
+## `Node64.CertDNSCheckPath` (struct)
+
+One way the DNS-01 check can take.
+
+- `name: String?` – Name of the way.
+- `direct: Bool?` – Directly via the ipv64 name servers (otherwise a public resolver).
+- `ok: Bool?` – The way works.
+- `detail: String?` – Details.
+
+## `Node64.CertDNSCheckResult` (struct)
+
+Result of the DNS-01 check. Schema of `POST /certs/dns-check/run`.
+
+- `paths: [CertDNSCheckPath]?` – All tested ways.
+- `directOK: Bool?` – A direct way works.
+- `publicOK: Bool?` – A public resolver works.
+- `ok: Bool?` – At least one way works (one is enough).
 
 ## `Node64.Certificate` (struct)
 
@@ -997,12 +1120,35 @@ Type of a check (`Check.type`).
 - `.push` = `"push"`
 - `.docker` = `"docker"`
 
+## `Node64.ClusterACMEResolution` (struct)
+
+Result of `Node64/Cluster/resolveACMEConflict(thumbprint:)`.
+
+- `chosen: String?` – Thumbprint of the kept account.
+- `dropped: [ClusterDroppedACMEAccount]?` – Accounts that were dropped.
+
 ## `Node64.ClusterCode` (struct)
 
 Pairing code for another node.
 
 - `code: String?` – The code (valid for 10 minutes, once).
 - `expires: Date?` – Expiry time.
+
+## `Node64.ClusterDroppedACMEAccount` (struct)
+
+An ACME account dropped by `Node64/Cluster/resolveACMEConflict(thumbprint:)`.
+
+- `thumbprint: String?` – Thumbprint of the account.
+- `nodeID: String?` – Node the account lived on.
+- `email: String?` – Contact e-mail of the account.
+
+## `Node64.ClusterDroppedUser` (struct)
+
+A user version dropped by `Node64/Cluster/resolveUserConflict(uid:)`.
+
+- `uid: String?` – Cluster ID of the user.
+- `nodeID: String?` – Node the version lived on.
+- `own: Bool?` – The version was on this node.
 
 ## `Node64.ClusterGroup` (struct)
 
@@ -1017,6 +1163,8 @@ The local cluster: members, forwarding node, open code and sync switches.
 - `members: [ClusterMember]?` – Members with their state.
 - `syncModules: [ClusterSyncModule]?` – Syncable modules with the switches on this node.
 - `httpsPort: Int?` – Own HTTPS port of this node, `0` = none (the cluster then uses the HTTP port, which also speaks TLS).
+- `userConflicts: JSONValue?` – Users with the same name but different cluster IDs (free-form; resolve with `Node64/Cluster/resolveUserConflict(uid:)`).
+- `acmeAccounts: JSONValue?` – Differing ACME accounts (free-form; resolve with `Node64/Cluster/resolveACMEConflict(thumbprint:)`).
 
 ## `Node64.ClusterMember` (struct)
 
@@ -1059,6 +1207,14 @@ A module whose data can be synced, with its switches on this node.
 New sync switches (result of `Node64/Cluster/setSync(module:item:enabled:)`).
 
 - `syncModules: [ClusterSyncModule]?` – Syncable modules with the switches on this node.
+
+## `Node64.ClusterUserResolution` (struct)
+
+Result of `Node64/Cluster/resolveUserConflict(uid:)`.
+
+- `username: String?` – User name.
+- `chosen: String?` – Cluster ID of the kept user.
+- `dropped: [ClusterDroppedUser]?` – Versions that were dropped.
 
 ## `Node64.Configuration` (struct)
 
@@ -1171,6 +1327,30 @@ Source of the certificate for encrypted DNS.
 - `.acme` = `"acme"`
 - `.central` = `"central"`
 
+## `Node64.DNS64DenylistAdded` (struct)
+
+Result of `Node64/DNS64/Denylist/add(_:)`.
+
+- `domain: String?` – The normalized domain.
+
+## `Node64.DNS64DenylistEntry` (struct)
+
+An entry of the own deny list. Entry of `Node64/DNS64/Denylist/list()`.
+
+- `domain: String?` – The blocked domain (applies to subdomains too).
+- `addedAt: Date?` – When it was added.
+- `id: String` – Identifier for `Identifiable` (the domain).
+
+## `Node64.DNS64DenylistReplaceResult` (struct)
+
+Result of `Node64/DNS64/Denylist/replace(_:)`.
+
+- `total: Int?` – Entries in the list now.
+- `added: Int?` – Entries added.
+- `removed: Int?` – Entries removed.
+- `duplicates: Int?` – Duplicates in the input.
+- `invalid: [String]?` – Invalid lines (at most 20).
+
 ## `Node64.DNS64Device` (struct)
 
 Device seen in the last 24 hours. Schema `DNS64Device`.
@@ -1189,6 +1369,39 @@ Device name of a zone with its current addresses (result of `Node64/DNS64/Device
 
 - `name: String?` – Fully qualified name, e.g. `tablet-lea.home.lan`.
 - `ips: [String]?` – Current addresses.
+
+## `Node64.DNS64Docker` (struct)
+
+Sync state of the Docker labels, result of `Node64/DNS64/docker()`.
+
+- `enabled: Bool?` – Whether the integration is on (`docker` in the settings).
+- `connected: Bool?` – Whether the Docker API is reachable.
+- `host: String?` – Docker API, e.g. `unix:///var/run/docker.sock`.
+- `error: String?` – Last error message.
+- `synced: Date?` – Time of the last sync.
+- `containers: [DNS64DockerContainer]?` – Containers with their entries.
+
+## `Node64.DNS64DockerContainer` (struct)
+
+A container with a `node64.dns.name` label. Entry of `DNS64Docker/containers`.
+
+- `container: String?` – Container name.
+- `state: String?` – Container state.
+- `names: [String]?` – DNS names of the container.
+- `addrs: [String]?` – Addresses the names point to.
+- `problem: DNS64DockerProblem?` – Why the entry was not applied, if it was not.
+- `problemName: String?` – Name the problem refers to.
+- `id: String` – Identifier for `Identifiable` (the container name).
+
+## `Node64.DNS64DockerProblem` (open enum)
+
+Why a Docker entry could not be applied.
+
+- `.noIP` = `"no_ip"`
+- `.badIP` = `"bad_ip"`
+- `.badName` = `"bad_name"`
+- `.taken` = `"taken"`
+- `.failed` = `"failed"`
 
 ## `Node64.DNS64ExportFormat` (open enum)
 
@@ -1314,6 +1527,7 @@ Device or network assigned to a group. Schema `DNS64GroupMember`.
 - `kind: DNS64GroupMemberKind` – Kind of the value.
 - `value: String` – MAC address, IP address or network (CIDR).
 - `label: String?` – Optional label (used for device names in zones).
+- `tags: [String]?` – Tags of the device (at most 10, each at most 24 characters).
 
 ## `Node64.DNS64GroupMemberKind` (open enum)
 
@@ -1351,6 +1565,14 @@ A blocklist entry of the settings. Schema `DNS64List`.
 - `enabled: Bool?` – Whether the list is active.
 - `custom: Bool?`
 
+## `Node64.DNS64ListsAddResult` (struct)
+
+Result of adding several lists with `urls`. Schema inline in `POST /dns64/lists` and `POST /dns64/allowlists`.
+
+- `added: [String]?` – URLs that were added.
+- `duplicates: [String]?` – URLs that already existed.
+- `invalid: [String]?` – URLs that were not valid.
+
 ## `Node64.DNS64ListStatus` (struct)
 
 Status of a blocklist. Schema `DNS64ListStatus`.
@@ -1361,6 +1583,7 @@ Status of a blocklist. Schema `DNS64ListStatus`.
 - `updatedAt: Date?` – Last successful update.
 - `error: String?` – Last error message, if any.
 - `failures: Int?` – Consecutive failures.
+- `enabled: Bool?` – Whether the list is active (only set for allow lists, see `Node64/DNS64/AllowLists/list()`).
 - `id: String` – Identifier for `Identifiable` (URL, else name).
 
 ## `Node64.DNS64Log` (struct)
@@ -1387,6 +1610,16 @@ One query of the log. Schema `DNS64LogRow`.
 - `proto: DNS64Protocol?` – Transport of the query.
 - `group: String?` – Device group of the client.
 - `date: Date?` – Time of the query as a date.
+
+## `Node64.DNS64MDNSStatus` (struct)
+
+State of the mDNS bridge (inline object of `GET /dns64/upstreams`).
+
+- `on: Bool?` – Whether the bridge is on.
+- `queries: Int?` – Multicast queries since start.
+- `answered: Int?` – Queries that were answered.
+- `responders: Int?` – Devices found at the last check; `-1` means not checked yet.
+- `probedAt: Date?` – Time of the last check.
 
 ## `Node64.DNS64Protocol` (open enum)
 
@@ -1518,6 +1751,24 @@ Writable fields of a schedule for `Node64/DNS64/Groups/Schedules/create(group:_:
 - `categories: [DNS64GroupCategory]?` – Categories blocked when `action` is `cats`.
 - `enabled: Bool?` – Whether the schedule is active.
 
+## `Node64.DNS64Service` (struct)
+
+A service that can be blocked per click. Entry of `DNS64Services/services`.
+
+- `key: String?` – Key to pass in `categories` of a group rule or schedule, e.g. `svc:tiktok`.
+- `id: String` – Service ID.
+- `name: String?` – Display name.
+- `group: String?` – Group of the service, e.g. `social`.
+- `domains: [String]?` – Domains the service uses.
+
+## `Node64.DNS64Services` (struct)
+
+Categories and services a group can block, result of `Node64/DNS64/services()`.
+
+- `categories: [String]?` – Category names.
+- `groups: [String]?` – Service groups, e.g. `ai`, `social`, `messenger`.
+- `services: [DNS64Service]?` – Services; block one with its `key` in `categories`.
+
 ## `Node64.DNS64Settings` (struct)
 
 Settings of the DNS64 resolver. Schema `DNS64Settings`.
@@ -1529,6 +1780,7 @@ Settings of the DNS64 resolver. Schema `DNS64Settings`.
 - `upstreamMode: DNS64UpstreamMode?` – How upstream servers are used.
 - `upstreams: [DNS64Upstream]?` – Upstream servers.
 - `lists: [DNS64List]?` – Blocklists.
+- `allowLists: [DNS64List]?` – Allow lists: domains that no blocklist blocks (the own deny list takes precedence).
 - `listHours: Int?` – Hours between blocklist updates.
 - `blockMode: DNS64BlockMode?` – Answer for blocked domains.
 - `cacheSize: Int?` – Maximum number of cache entries.
@@ -1550,6 +1802,9 @@ Settings of the DNS64 resolver. Schema `DNS64Settings`.
 - `upstreamCount: Int?`
 - `certID: Int?`
 - `firefoxCanary: Bool?` – Answer `use-application-dns.net` with NXDOMAIN so Firefox disables its own DoH (default on).
+- `mdns: Bool?` – mDNS bridge enabled (answers local names via multicast DNS).
+- `docker: Bool?` – Docker integration enabled (entries from `node64.dns.name` container labels).
+- `dockerIP: String?` – IP address used for Docker entries.
 
 ## `Node64.DNS64SettingsInput` (struct)
 
@@ -1562,6 +1817,7 @@ Changes for `Node64/DNS64/updateSettings(_:)`. Only fields you set are sent.
 - `upstreamMode: DNS64UpstreamMode?` – How upstream servers are used.
 - `upstreams: [DNS64Upstream]?` – Replaces the whole upstream list. Read it with `Node64/DNS64/settings()`, modify it and send the complete list back.
 - `lists: [DNS64List]?` – Replaces the whole blocklist list. Read it with `Node64/DNS64/settings()`, modify it and send the complete list back.
+- `allowLists: [DNS64List]?` – Replaces the whole allow list list. Read it with `Node64/DNS64/settings()`, modify it and send the complete list back.
 - `listHours: Int?` – Hours between blocklist updates.
 - `blockMode: DNS64BlockMode?` – Answer for blocked domains.
 - `cacheSize: Int?` – Maximum number of cache entries.
@@ -1583,6 +1839,16 @@ Changes for `Node64/DNS64/updateSettings(_:)`. Only fields you set are sent.
 - `upstreamCount: Int?`
 - `certID: Int?`
 - `firefoxCanary: Bool?` – Answer `use-application-dns.net` with NXDOMAIN so Firefox disables its own DoH (default on).
+- `mdns: Bool?` – mDNS bridge enabled (answers local names via multicast DNS).
+- `docker: Bool?` – Docker integration enabled (entries from `node64.dns.name` container labels).
+- `dockerIP: String?` – IP address used for Docker entries.
+
+## `Node64.DNS64SortDirection` (open enum)
+
+Sort direction of a list.
+
+- `.ascending` = `"asc"`
+- `.descending` = `"desc"`
 
 ## `Node64.DNS64Status` (struct)
 
@@ -1652,6 +1918,21 @@ Kind of a top list.
 - `.allowed` = `"allowed"`
 - `.clients` = `"clients"`
 
+## `Node64.DNS64TopPage` (struct)
+
+A page of the full top list, result of `Node64/DNS64/topList(kind:range:query:sort:direction:limit:offset:)`.
+
+- `items: [DNS64TopItem]?` – Entries of this page.
+- `total: Int?` – Number of all names in the time range (with the search applied).
+
+## `Node64.DNS64TopSort` (open enum)
+
+Sort field of `Node64/DNS64/topList(kind:range:query:sort:direction:limit:offset:)`.
+
+- `.count` = `"count"`
+- `.name` = `"name"`
+- `.blocked` = `"blocked"`
+
 ## `Node64.DNS64Upstream` (struct)
 
 An upstream server entry of the settings. Schema `DNS64Upstream`.
@@ -1679,6 +1960,8 @@ Upstream servers and the router for local names, result of `Node64/DNS64/Upstrea
 - `localDNS: String?` – DNS server for local names.
 - `localSource: String?` – Where `localDNS` comes from: `config` or `auto`.
 - `count: Int?` – Number of servers.
+- `mdns: DNS64MDNSStatus?` – State of the mDNS bridge.
+- `localDomains: [String]?` – Domain suffixes learned from the router (only with the mDNS bridge).
 
 ## `Node64.DNS64UpstreamStats` (struct)
 
@@ -1696,6 +1979,7 @@ An upstream server with statistics. Schema `DNS64UpstreamStats`.
 - `lastError: String?` – Last error message.
 - `lastErrorAt: Date?` – Time of the last error.
 - `active: Bool?`
+- `pausedUntil: Date?` – The server is skipped until this time after repeated failures.
 - `id: String` – Identifier for `Identifiable` (URL, else name).
 
 ## `Node64.DNS64Zone` (struct)
@@ -1732,6 +2016,16 @@ Writable fields of a local zone. The on/off state is changed with enable/disable
 - `expire: Int?` – SOA expire.
 - `minimum: Int?` – TTL for "does not exist".
 - `hostmaster: String?` – SOA mail.
+
+## `Node64.DNS64ZoneTSIG` (struct)
+
+Key for dynamic updates (TSIG) of a zone. **Contains secret key material.**
+
+- `zone: String?` – Name of the zone.
+- `dynamic: Bool?` – Whether dynamic updates are on.
+- `algorithm: String?` – Algorithm, e.g. `hmac-sha256`.
+- `tsigName: String?` – Key name.
+- `tsigSecret: String?` – Key (Base64). Secret: shown only by these endpoints, never in lists, exports or the cluster. Do not log it.
 
 ## `Node64.DNSAccount` (struct)
 
@@ -1838,6 +2132,15 @@ Result of `Node64/HC/Docker/containers()`.
 - `systemID: Int?` – Docker host of the monitoring; absent if there is none.
 - `monitored: Bool?` – Values come from running monitoring.
 
+## `Node64.DockerCredentials` (struct)
+
+Schema `DockerCredentials`: which credentials are stored for a Docker host (never the keys themselves).
+
+- `key: Bool?` – Private key (SSH or TLS client) is stored.
+- `cert: Bool?` – TLS client certificate is stored.
+- `ca: Bool?` – CA of the Docker daemon is stored.
+- `publicKey: String?` – SSH: line for `~/.ssh/authorized_keys` on the Docker host.
+
 ## `Node64.DockerHealth` (open enum)
 
 Healthcheck state of a Docker container.
@@ -1855,6 +2158,33 @@ State of a container as the rules see it.
 - `.paused` = `"paused"`
 - `.error` = `"error"`
 - `.unknown` = `"unknown"`
+
+## `Node64.DockerProbe` (struct)
+
+Schema `DockerProbe`: result of testing a Docker host.
+
+- `ok: Bool?` – Connection works.
+- `error: String?` – Error message.
+- `fingerprint: String?` – Seen host key (SSH) or certificate (TLS), 64 hex; usable as `pinSHA256`.
+- `fingerprintDisplay: String?` – Fingerprint for comparing: SSH like `ssh-keygen` (`SHA256:…`), TLS with colons.
+- `trusted: Bool?` – TLS: certificate confirmed by the CA or system CA (no pin needed).
+- `needConfirm: Bool?` – Only the fingerprint was read: test again with it as `pinSHA256`.
+- `pinDiffers: Bool?` – Seen fingerprint differs from the given pin.
+- `info: Info?`
+- `containers: Int?` – Number of containers.
+- `running: Int?` – Number of running containers.
+- `warning: String?` – Warning.
+- `publicKey: String?` – SSH: public part of the key in use (`authorized_keys` line).
+
+## `Node64.DockerProbe.Info` (struct)
+
+Docker daemon information.
+
+- `name: String?` – Host name.
+- `os: String?` – Operating system.
+- `version: String?` – Docker version.
+- `ncpu: Int?` – Number of CPUs.
+- `memTotal: Int?` – Total memory in bytes.
 
 ## `Node64.DynDNSAccountName` (struct)
 
@@ -1895,6 +2225,20 @@ Result of `Node64/DynDNS/check()`.
 
 - `case completed(DynDNSStatus)` – The round finished within 45 seconds.
 - `case running`
+
+## `Node64.DynDNSClusterPreference` (struct)
+
+Result of `Node64/DynDNS/setPreferredNode(_:)`.
+
+- `preferredNode: String?` – The stored preferred node ID.
+
+## `Node64.DynDNSClusterState` (struct)
+
+The `cluster` object of `DynDNSStatus`.
+
+- `leader: String?` – ID of the node that updates the names; empty while being determined.
+- `thisNode: String?` – ID of this node.
+- `preferredNode: String?` – Preferred node (see `Node64/DynDNS/setPreferredNode(_:)`).
 
 ## `Node64.DynDNSConnection` (struct)
 
@@ -1975,6 +2319,7 @@ Result of `Node64/DynDNS/status()` and a finished `Node64/DynDNS/check()`.
 - `connection: DynDNSConnection?` – Hint about the connection type.
 - `targets: JSONValue?` – Targets by status (counts or lists, as sent by the node).
 - `limit: DynDNSLimit?` – Update limit; only with a central ipv64 API key.
+- `cluster: DynDNSClusterState?` – Cluster state; only with the DynDNS cluster area and further nodes.
 
 ## `Node64.DynDNSTarget` (struct)
 
@@ -2067,6 +2412,7 @@ Settings of the shared entry point (edge). Also the body of `Node64/Ports/Edge/u
 - `defaultResponse: EdgeDefaultResponse?` – Response for unknown names.
 - `defaultURL: String?` – Target URL for `EdgeDefaultResponse/redirect`.
 - `defaultHTML: String?` – HTML for `EdgeDefaultResponse/html`.
+- `proxyProtocol: String?` – Addresses or networks of upstream proxies (e.g. Traefik with `proxyProtocol`) that send a PROXY header (v1/v2) with the real client address on ports 80/443, e.g. `172.18.0.0/16`.
 
 ## `Node64.EdgeDefaultResponse` (open enum)
 
@@ -2172,6 +2518,33 @@ Catalog entry. Schema `Honeypot64CatalogItem`.
 - `purpose: String?` – Purpose of the port there.
 - `error: String?` – Error text.
 - `conns: Int?` – Connections.
+
+## `Node64.Honeypot64CertificateInput` (struct)
+
+Request body of `Node64/Honeypot/certificate(_:)`.
+
+- `domain: String` – ipv64 domain of the account.
+- `names: [String]` – Decoy names (prefix or full name under the domain; no wildcard, not the domain itself, at most 20).
+- `dnsTargets: [String]?` – IPv4/IPv6 addresses or one name (CNAME) for which DNS records are created at ipv64; existing ones stay.
+
+## `Node64.Honeypot64CertificateResult` (struct)
+
+Result of `Node64/Honeypot/certificate(_:)` (202, issuing continues in the background).
+
+- `certID: Int?` – ID of the certificate; selected in the settings (`cert_id`).
+- `names: [String]?` – Names of the certificate.
+- `selected: Bool?` – The certificate was selected in the settings.
+- `dns: [DNSEntry]?` – DNS records per name.
+- `dnsError: String?` – Error while creating the DNS records.
+
+## `Node64.Honeypot64CertificateResult.DNSEntry` (struct)
+
+DNS record outcome.
+
+- `name: String?` – Record name.
+- `type: String?` – Record type.
+- `result: String?`
+- `error: String?` – Error text.
 
 ## `Node64.Honeypot64Config` (struct)
 
@@ -2513,6 +2886,78 @@ Hint about a port. Schema `Honeypot64Warning`.
 - `purpose: String?` – Purpose of the port there.
 - `skipped: Bool?`
 
+## `Node64.Honeypot64Watch` (struct)
+
+Overview of the early warning. Schema of `GET /honeypot/watch`.
+
+- `limits: Limits?` – Limits of the account.
+- `networks: [Honeypot64WatchNetwork]?` – Watched networks.
+- `dyndns: [DynDNSAddress]?` – DynDNS addresses that are watched as well.
+- `full: Bool?` – The limit of networks is reached.
+- `running: Bool?` – A retrieval is running.
+- `state: JSONValue?` – State of the retrieval and latest hits (free-form object in the spec).
+
+## `Node64.Honeypot64Watch.DynDNSAddress` (struct)
+
+A DynDNS address.
+
+- `ip: String?` – IP address.
+- `domain: String?` – Domain.
+
+## `Node64.Honeypot64Watch.Limits` (struct)
+
+Limits of the early warning.
+
+- `max: Int?` – Maximum number of networks.
+- `minPrefixV4: Int?` – Smallest allowed IPv4 prefix length.
+- `minPrefixV6: Int?` – Smallest allowed IPv6 prefix length.
+
+## `Node64.Honeypot64WatchCheckResult` (struct)
+
+Result of `Node64/Honeypot/Watch/check()`.
+
+- `newHits: Int?` – Number of new hits.
+- `state: JSONValue?` – State of the retrieval (free-form object in the spec).
+
+## `Node64.Honeypot64WatchNetwork` (struct)
+
+A network under early-warning watch at ipv64.
+
+- `id: Int` – ID at ipv64.
+- `cidr: String?` – Network in CIDR notation.
+- `label: String?` – Label (up to 64 characters).
+- `verified: Bool?` – Verified by ipv64.
+- `createdAt: String?` – Creation time (as sent by the node).
+
+## `Node64.IPv64Channel` (struct)
+
+Channel at ipv64 (e-mail, SMS, app). Schema of `/ipv64/channels`.
+
+- `id: Int` – Channel ID at ipv64.
+- `type: ChannelType?` – Channel type (`ipv64_mail`, `ipv64_sms`, `app`).
+- `name: String?` – Display name.
+- `enabled: Bool?` – Whether the channel is active.
+- `isDefault: Bool?` – Whether the channel is used by default.
+- `verified: Bool?` – Confirmed by code.
+- `lang: String?` – Language of the messages.
+- `notifyDown: Bool?` – Notify when a check goes down.
+- `notifyUp: Bool?` – Notify when a check is up again.
+- `config: [String: JSONValue]?` – Non-secret values (e-mail address or number).
+- `lastError: String?` – Last delivery error.
+
+## `Node64.IPv64ChannelInput` (struct)
+
+Request body of `POST`/`PUT /ipv64/channels`.
+
+- `type: ChannelType?`
+- `name: String?` – Name (1 to 100 characters); required on create.
+- `lang: String?` – Language of the messages.
+- `config: [String: JSONValue]?` – Type fields: `["email": …]` or `["number": "+49 …"]`; unknown fields fail with 422.
+- `enabled: Bool?` – Whether the channel is active.
+- `isDefault: Bool?` – Whether the channel is used by default.
+- `notifyDown: Bool?` – Notify when a check goes down.
+- `notifyUp: Bool?` – Notify when a check is up again.
+
 ## `Node64.IPv64LinkAccount` (struct)
 
 The central ipv64 API key of the node: account, plan and expiry. The key itself is never returned.
@@ -2525,6 +2970,25 @@ The central ipv64 API key of the node: account, plan and expiry. The key itself 
 - `checkedAt: Date?` – Time of the last check at ipv64.
 - `expiresAt: Date?` – Expiry of the key.
 - `daysLeft: Int?` – Days until the key expires.
+
+## `Node64.LinkCode` (struct)
+
+Result of `Node64/Link/startCodeLink()`.
+
+- `code: String?` – Code to enter in the ipv64.net portal.
+- `expiresAt: Date?` – Expiry of the code.
+- `hub: String?` – Hub address.
+
+## `Node64.LinkCodeStatus` (struct)
+
+Result of `Node64/Link/codeStatus()`.
+
+- `linked: Bool?` – The node is linked.
+- `connected: Bool?` – The node is connected to the hub.
+- `code: String?` – Open link code.
+- `hub: String?` – Hub address.
+- `error: String?` – Last error.
+- `requesting: Bool?` – A link request is in progress.
 
 ## `Node64.LinkConflict` (struct)
 
@@ -2586,6 +3050,7 @@ Log levels (result of `Node64/Node/logging()` and `Node64/Node/updateLogging(lev
 - `level: LogLevel?` – Global log level.
 - `modules: [String: String]?` – Per-module overrides (level or `inherit`).
 - `knownModules: [String]?` – Names of all modules that accept a level (only returned by the `GET`).
+- `apiLog: APILogMode?` – API log: every request to `/api/` as a log line (without content), independent of the level.
 
 ## `Node64.Maintenance` (struct)
 
@@ -2647,12 +3112,55 @@ Result of `Node64/Node/APIKeys/create(name:)`. The key is only part of this resp
 - `createdAt: Date?` – Creation time.
 - `key: String?` – The secret API key. It is shown only once; store it securely.
 
+## `Node64.NodeCreatedMCPKey` (struct)
+
+Result of `Node64/Node/MCP/createKey(name:areas:)`.
+
+- `id: Int` – Numeric key ID.
+- `name: String?` – Name of the key.
+- `hint: String?` – Short hint to recognize the key.
+- `areas: [String]?` – Areas the key may read.
+- `createdAt: Date?` – Creation time.
+- `lastUsedAt: Date?` – Time of the last use.
+- `lastIP: String?` – IP address of the last use.
+- `key: String?` – The secret key (`mcp64_…`). It is shown only once; store it securely.
+
 ## `Node64.NodeImportResult` (struct)
 
 Result of `Node64/Node/importConfiguration(_:password:)`.
 
 - `imported: Int?` – Number of imported items.
 - `problems: [String]?` – Problems that occurred during the import.
+
+## `Node64.NodeMCP` (struct)
+
+State of the MCP interface (result of `Node64/Node/MCP/get()`).
+
+- `enabled: Bool?` – MCP is switched on.
+- `path: String?` – URL path of the MCP endpoint.
+- `ratePerMinute: Int?` – Requests allowed per minute.
+- `areas: [NodeMCPArea]?` – Areas a key can be restricted to.
+- `keys: [NodeMCPKey]?` – Your own keys.
+
+## `Node64.NodeMCPArea` (struct)
+
+An area of the MCP interface.
+
+- `name: String?` – Area name.
+- `available: Bool?` – The area is available on this node.
+- `id: String`
+
+## `Node64.NodeMCPKey` (struct)
+
+An MCP key (without the key itself).
+
+- `id: Int` – Numeric key ID.
+- `name: String?` – Name of the key.
+- `hint: String?` – Short hint to recognize the key.
+- `areas: [String]?` – Areas the key may read.
+- `createdAt: Date?` – Creation time.
+- `lastUsedAt: Date?` – Time of the last use.
+- `lastIP: String?` – IP address of the last use.
 
 ## `Node64.NodeOverview` (struct)
 
@@ -2776,6 +3284,27 @@ The `node` object of `NodeStatus`.
 - `databaseBytes: Int?` – Size of the database in bytes.
 - `logLevel: String?` – Global log level.
 
+## `Node64.NodeUpdateStatus` (struct)
+
+Result of `Node64/Node/Update/apply()` and `Node64/Node/Update/reset()` (`202`).
+
+- `status: String?`
+- `version: String?` – Version being installed (only for `apply`).
+
+## `Node64.NodeUser` (struct)
+
+A user of the node (no password hash, no secrets).
+
+- `id: Int` – Numeric user ID.
+- `uid: String?` – ID of the user in the cluster.
+- `username: String?` – User name.
+- `lang: NodeUserLanguage?` – Language.
+- `timezone: String?` – Time zone (IANA).
+- `totp: Bool?` – Two-factor authentication is set up.
+- `isSelf: Bool?` – This is the signed-in user or the owner of the API key.
+- `createdAt: Date?` – Creation time.
+- `lastLoginAt: Date?` – Time of the last login.
+
 ## `Node64.OnlineCheckAction` (open enum)
 
 Action of `Node64/HC/OnlineChecks/perform(_:action:)` (`POST /online-checks/{token}/{action}`).
@@ -2842,11 +3371,66 @@ Default page for unknown names (read and write).
 - `url: String?` – Address for mode `redirect`.
 - `html: String?` – Page for mode `html`, at most 64 KB.
 
+## `Node64.Proxy64Docker` (struct)
+
+State of the Docker sync. Schema of `GET /cdn64/docker`.
+
+- `enabled: Bool?` – Sync is switched on.
+- `connected: Bool?` – The Docker API is reachable.
+- `host: String?` – Docker API as used.
+- `error: String?` – Error of the last sync.
+- `synced: Date?` – Time of the last sync.
+- `containers: [JSONValue]?` – Containers with `node64.proxy.*` or `traefik.*` labels (free-form objects, the spec documents no fields).
+- `settings: Proxy64DockerSettings?` – Current settings.
+
+## `Node64.Proxy64DockerSettings` (struct)
+
+Docker sync settings of PROXY64 (`settings` of `Proxy64Docker`).
+
+- `enabled: Bool?` – Create proxy hosts from Docker labels (`node64.proxy.*`).
+- `traefik: Bool?` – Also read `traefik.*` labels (default on).
+- `dockerHost: String?` – Docker API of this node (`unix://` or `tcp://` to a docker-socket-proxy, no `ssh://`); `""` = default.
+- `certificate: String?` – Certificate for new Docker hosts: `""` (none), `auto`, `ipv64`, `http` or `dns:<account>`.
+
 ## `Node64.Proxy64HealthcheckResult` (struct)
 
 Result of creating a health check for a host or stream target.
 
 - `token: String?` – Token of the new health check.
+
+## `Node64.Proxy64HostProtection` (struct)
+
+CDN64 protection (WAF, JA4) of the names of a host.
+
+- `waf: Bool?` – Pattern WAF is on.
+- `ja4: CDNJA4Mode?` – JA4 mode.
+- `names: [Proxy64HostProtectionName]?` – Per name.
+
+## `Node64.Proxy64HostProtectionName` (struct)
+
+One name in `Proxy64HostProtection`.
+
+- `id: Int?` – ID of the name at ipv64.
+- `fqdn: String?` – Full name.
+- `waf: Bool?` – Pattern WAF is on.
+- `ja4: CDNJA4Mode?` – JA4 mode as a string.
+
+## `Node64.Proxy64JA4Hit` (struct)
+
+A JA4 fingerprint with its hits.
+
+- `ja4: String?` – JA4 fingerprint.
+- `hits: Int?` – Number of hits.
+
+## `Node64.Proxy64LocalDNSResult` (struct)
+
+Result of `Node64/Proxy64/Hosts/addLocalDNS(_:ipv4:ipv6:)`.
+
+- `added: Int?` – Number of records added.
+- `skipped: [String]?`
+- `excluded: [String]?` – Names left out (wildcards, main domains).
+- `ipv4: String?` – IPv4 address used.
+- `ipv6: String?` – IPv6 address used.
 
 ## `Node64.Proxy64LogEntry` (struct)
 
@@ -2864,6 +3448,71 @@ An access log entry.
 - `ms: Int?` – Duration in milliseconds.
 - `userAgent: String?` – User agent of the client.
 - `reason: String?` – Why the request was rejected (`blocklist`, `ban`, `conns`, `conn_rate`, `max_conns`, `req_rate`, `target`, `exploit`, `acl`).
+
+## `Node64.Proxy64ProtectionHost` (struct)
+
+Protection statistics of one name.
+
+- `id: Int?` – ID of the name at ipv64.
+- `fqdn: String?` – Full name.
+- `mode: Int?` – Mode.
+- `hostID: Int?` – Host ID on this node; missing = none.
+- `blocked: Int?` – Blocked requests.
+- `overload: Int?` – Overload rejections.
+- `waf: Bool?` – Pattern WAF is on.
+- `ja4: CDNJA4Mode?` – JA4 mode.
+
+## `Node64.Proxy64ProtectionStats` (struct)
+
+What the CDN64 servers blocked for the names of the account. Schema of `GET /cdn64/protection`.
+
+- `days: Int?` – Number of days covered.
+- `ja4Global: CDNJA4Mode?` – Global JA4 phase: `count` = start phase (count only), `block`.
+- `totals: Proxy64ProtectionTotals?` – Sums.
+- `daily: [JSONValue]?` – Per day (free-form objects, the spec documents no fields).
+- `ja4Top: [Proxy64JA4Hit]?` – Top JA4 fingerprints.
+- `hosts: [Proxy64ProtectionHost]?` – Per name, with WAF/JA4.
+
+## `Node64.Proxy64ProtectionTotals` (struct)
+
+Sums of `Proxy64ProtectionStats`.
+
+- `blockedList: Int?` – Blocked by blocklists.
+- `blockedACL: Int?` – Blocked by access lists.
+- `blockedFlood: Int?` – Blocked by flood protection.
+- `blockedLimit: Int?` – Blocked by limits.
+- `blockedWAF: Int?` – Blocked by the WAF.
+- `blockedJA4: Int?` – Blocked by JA4.
+- `ja4Hits: Int?` – JA4 hits.
+- `blockedIPs: Int?` – Blocked IP addresses.
+- `conns: Int?` – Connections.
+- `connsV4: Int?` – IPv4 connections.
+
+## `Node64.Proxy64ReleaseSource` (open enum)
+
+Which automatic block `Node64/Proxy64/release(ip:from:)` lifts.
+
+- `.both` = `""`
+- `.honeypot` = `"honeypot"`
+- `.ban` = `"ban"`
+
+## `Node64.Proxy64Servers` (struct)
+
+CDN64 servers and connections per server. Fields come from ipv64.
+
+- `count: Int?` – Assigned servers.
+- `choice: Int?` – Chosen number (`0` = maximum, or all including future ones).
+- `max: Int?` – Maximum number.
+- `all: Bool?` – All servers, including future ones.
+- `total: Int?` – Total number of servers.
+- `selectable: Bool?` – The number is selectable (class).
+- `assigned: [String]?` – Assigned servers.
+- `active: [String]?` – Servers currently in DNS.
+- `sessions: Int?` – Connections per server.
+- `sessionsMax: Int?` – Maximum connections per server.
+- `replaced: [String: String]?` – Failover: failed server to replacement.
+- `options: [Int]?` – Selectable numbers, `0` = all (including future ones); empty = fixed.
+- `sessionOptions: [Int]?` – Selectable connections per server; empty = fixed.
 
 ## `Node64.Proxy64Settings` (struct)
 
@@ -3026,6 +3675,7 @@ Kind of a proxy host.
 - `.dead` = `"dead"`
 - `.passthrough` = `"passthrough"`
 - `.status` = `"status"`
+- `.stream` = `"stream"`
 
 ## `Node64.ProxyHostMinTLS` (open enum)
 
@@ -3098,6 +3748,8 @@ A TCP/UDP stream. Schema `Stream` (renamed, the name is too generic).
 - `certName: String?` – Name of the certificate used for TLS termination.
 - `geoMode: CDNGeoMode?` – Country filter mode; changing it does not restart the stream.
 - `geoCountries: [String]?` – ISO country codes, at most 60.
+- `bwDownMbit: Int?` – Bandwidth to the visitor in Mbit/s for all connections together; `0` = unlimited.
+- `bwUpMbit: Int?` – Bandwidth from the visitor in Mbit/s; `0` = unlimited.
 
 ## `Node64.ProxyStreamInput` (struct)
 
@@ -3113,6 +3765,9 @@ Writable fields of a stream. Schema `StreamInput` (renamed).
 - `tlsCertID: Int?` – TCP: terminate TLS with this certificate; `0` = raw.
 - `geoMode: CDNGeoMode?` – Country filter mode.
 - `geoCountries: [String]?` – ISO country codes, at most 60.
+- `bwDownMbit: Int?` – Bandwidth to the visitor in Mbit/s for all connections together, 0-100000; `0` = unlimited.
+- `bwUpMbit: Int?` – Bandwidth from the visitor in Mbit/s, 0-100000; `0` = unlimited.
+- `onlineName: String?` – Port mapper: expose the port via CDN64 under this name (mode 3); `""` = local only.
 
 ## `Node64.ProxyStreamStats` (struct)
 
@@ -3136,6 +3791,22 @@ Status reported by a push heartbeat (query `status`).
 - `.up` = `"up"`
 - `.down` = `"down"`
 
+## `Node64.PVEAsCheckAllResult` (struct)
+
+Result of the `ascheck-all` endpoints.
+
+- `added: Int?` – Newly created checks.
+- `failed: Int?` – Number of failures.
+- `error: String?` – First error (only when `failed > 0`).
+- `key: String?` – i18n key of the first error.
+
+## `Node64.PVEAsCheckScope` (open enum)
+
+Scope of "add all as check".
+
+- `.guests` = `"guests"`
+- `.nodes` = `"nodes"`
+
 ## `Node64.PVEExpectRunning` (enum)
 
 Value of `expect_running` in `PVESettingsInput`.
@@ -3149,6 +3820,7 @@ Value of `expect_running` in `PVESettingsInput`.
 Filter for `Node64/HC/Proxmox/Systems/list(kind:)`.
 
 - `.pve` = `"pve"`
+- `.pbs` = `"pbs"`
 - `.docker` = `"docker"`
 - `.all` = `"all"`
 
@@ -3312,6 +3984,7 @@ Schema `PVESettingsInput`: partial update of one level.
 
 - `muted: Bool?` – Mute the level.
 - `asCheck: Bool?` – Create (`true`) or delete (`false`) the healthcheck of this level.
+- `name: String?` – Name of the new check; only with `asCheck: true` (empty = "System – Eintrag"); an existing check keeps its name.
 - `expectRunning: PVEExpectRunning?` – Expected state; `nil` leaves it, `PVEExpectRunning/automatic` sends `null`.
 - `rules: PVERuleSet?` – Rules of this level.
 
@@ -3359,11 +4032,28 @@ Schema `PVESystem`: a Proxmox VE system (single node or cluster) or a Docker hos
 - `guests: Int?` – Number of guests (Docker: containers).
 - `guestsRunning: Int?` – Number of running guests.
 - `guestsBad: Int?` – Number of guests in a bad state.
+- `credentials: DockerCredentials?` – Docker hosts via SSH/TLS: which credentials are stored (never the keys).
+- `storages: [Storage]?` – Proxmox VE only: storages from the last query.
+- `pbs: JSONValue?` – Proxmox Backup Server only: datastores, services, update, failed tasks (free-form object in the spec).
+
+## `Node64.PVESystem.Storage` (struct)
+
+Storage of a Proxmox VE system.
+
+- `storage: String?` – Storage name.
+- `node: String?` – Node.
+- `shared: Bool?` – Shared storage.
+- `type: String?` – Storage type.
+- `content: String?` – Content types.
+- `status: String?` – Status.
+- `total: Int?` – Total bytes.
+- `used: Int?` – Used bytes.
 
 ## `Node64.PVESystemInput` (struct)
 
 Schema `PVESystemInput`: body for creating or partially updating a system.
 
+- `kind: PVESystemKind?`
 - `name: String?` – Name.
 - `addresses: [String]?` – Addresses.
 - `tokenID: String?` – API token ID.
@@ -3371,12 +4061,17 @@ Schema `PVESystemInput`: body for creating or partially updating a system.
 - `pinSHA256: String?` – Pinned certificate fingerprint (64 hex characters).
 - `interval: Int?` – Query interval in seconds (15 to 300, default 30).
 - `enabled: Bool?` – Switch monitoring on or off (default on); toggling pauses or starts the system's checks.
+- `privateKey: String?` – Docker only: private SSH or TLS client key (PEM, write only, secret); empty keeps the stored one.
+- `cert: String?` – Docker (https) only: TLS client certificate (PEM); `""` removes certificate and key.
+- `ca: String?` – Docker (https) only: CA of the Docker daemon (PEM); `""` removes it.
+- `generateKey: Bool?` – Docker (ssh) only: generate and store a new ed25519 key; the public part appears in `credentials.publicKey`.
 
 ## `Node64.PVESystemKind` (open enum)
 
 Kind of a monitored system.
 
 - `.pve` = `"pve"`
+- `.pbs` = `"pbs"`
 - `.docker` = `"docker"`
 
 ## `Node64.PVESystemState` (open enum)
@@ -3396,6 +4091,140 @@ Schema `PVEThreshold`: a threshold rule.
 
 - `percent: Double?` – Percent; `0` switches the rule off.
 - `minutes: Int?` – Minutes the value has to stay above the threshold.
+
+## `Node64.Sonar64Inbound` (struct)
+
+Result of `Node64/Sonar64/inbound(since:)`.
+
+- `ready: Bool?`
+- `rows: [Sonar64InboundRow]?` – Measurements of this node by others (at most 500).
+
+## `Node64.Sonar64InboundProbe` (struct)
+
+A probe answered live in `Sonar64Recent`.
+
+- `from: String?` – Short ID (8 hex characters) of the measuring node.
+- `name: String?` – Name of the measuring node.
+- `fam: Int?` – IP family (4 or 6).
+- `count: Int?` – Number of probes.
+- `at: Date?` – Time of the last probe.
+
+## `Node64.Sonar64InboundRow` (struct)
+
+A row of `Sonar64Inbound`.
+
+- `from: String?` – ID of the measuring node.
+- `name: String?` – Name of the measuring node.
+- `asname: String?` – AS name.
+- `place: String?` – Place.
+- `trust: Sonar64TrustLevel?` – Trust level of the measuring node.
+- `fam: Int?` – IP family (4 or 6).
+- `method: String?` – Method.
+- `avg: Double?` – Average round-trip time.
+- `loss: Double?` – Loss as a fraction from 0 to 1.
+- `at: Date?` – Time of the measurement.
+
+## `Node64.Sonar64NodeState` (struct)
+
+The `node` object of `Sonar64Status`.
+
+- `nodeID: String?` – Node ID.
+- `registered: Bool?` – The node is registered at ipv64.
+- `mode: String?` – Mode.
+- `measured: Bool?` – The node is measured too (UDP 6464 open).
+- `budget: String?` – Budget.
+- `responder: Bool?` – The node answers probes.
+- `planIssued: Date?` – Issue time of the measurement plan.
+- `planExpires: Date?` – Expiry of the measurement plan.
+- `anchorsOnly: Bool?` – Only anchors are measured.
+- `paused: Sonar64PauseReason?` – Why measuring is paused.
+- `sentToday: Int?` – Probes sent today.
+- `lastReport: Date?` – Time of the last report.
+- `buffered: Int?` – Results waiting to be reported.
+- `lastError: String?` – Last error.
+
+## `Node64.Sonar64Recent` (struct)
+
+Result of `Node64/Sonar64/recent(n:)`.
+
+- `results: [Sonar64Result]?` – Own measurements, newest first.
+- `inbound: [Sonar64InboundProbe]?` – Probes answered live on UDP 6464.
+- `responder: Bool?` – The node answers probes.
+
+## `Node64.Sonar64Result` (struct)
+
+An own measurement in `Sonar64Recent`.
+
+- `at: Date?` – Time of the measurement.
+- `target: String?` – Node ID of the target (anchor `a_<name>`).
+- `method: Sonar64Method?` – Method.
+- `fam: Int?` – IP family (4 or 6).
+- `sent: Int?` – Probes sent.
+- `recv: Int?` – Probes received.
+- `min: Double?` – Minimum round-trip time.
+- `avg: Double?` – Average round-trip time.
+- `max: Double?` – Maximum round-trip time.
+- `loss: Double?` – Loss in percent.
+- `err: String?` – Error.
+
+## `Node64.Sonar64Settings` (struct)
+
+Result of `Node64/Sonar64/settings()`.
+
+- `participate: Bool?` – The node takes part.
+- `measured: Bool?` – The node is measured too (UDP 6464).
+- `budget: Sonar64Budget?` – Budget.
+- `quiet: String?` – Quiet hours `from-to` in hours, e.g. `23-6`; empty = none.
+- `name: String?` – Name of the node.
+- `lat: Double?` – Latitude.
+- `lon: Double?` – Longitude.
+- `access: Sonar64Access?` – Connection type.
+- `device: Sonar64Device?` – Device type.
+
+## `Node64.Sonar64SettingsInput` (struct)
+
+Body of `Node64/Sonar64/updateSettings(_:)`. Omitted (`nil`) fields stay unchanged.
+
+- `participate: Bool?` – Take part or leave.
+- `measured: Bool?` – Also be measured (opens UDP 6464).
+- `budget: Sonar64Budget?` – Budget.
+- `quiet: String?` – Quiet hours `from-to`, e.g. `23-6`.
+- `name: String?` – Name of the node.
+- `lat: Double?` – Latitude.
+- `lon: Double?` – Longitude.
+- `clearLocation: Bool?` – Delete the location.
+- `access: Sonar64Access?` – Connection type.
+- `device: Sonar64Device?` – Device type.
+
+## `Node64.Sonar64Status` (struct)
+
+Result of `Node64/Sonar64/status()`.
+
+- `version: String?` – Software version of the module.
+- `running: Bool?` – The module is running.
+- `startedAt: Date?` – Start time.
+- `keySet: Bool?` – A central ipv64 API key is stored.
+- `participate: Bool?` – The node takes part in Sonar64.
+- `node: Sonar64NodeState?` – State of the node (core); empty without participation.
+- `error: String?` – Error message.
+- `portError: String?` – UDP 6464 is in use: outgoing only.
+- `me: JSONValue?` – The own node at ipv64 (`GET /sonar/me`, free-form), including the exact location. `nil` when unknown.
+- `meError: String?` – Error while fetching `me`.
+- `trust: Sonar64Trust?` – Trust level.
+- `publicURL: String?` – Public node page on ipv64.net.
+
+## `Node64.Sonar64Trust` (struct)
+
+The `trust` object of `Sonar64Status`.
+
+- `level: Sonar64TrustLevel?` – Level.
+- `next: String?` – Next level.
+- `pct: Int?` – Progress to the next level in percent.
+- `days: Int?` – Days of participation.
+- `needDays: Int?` – Days needed for the next level.
+- `uptime: Double?` – Uptime.
+- `needUptime: Double?` – Uptime needed for the next level.
+- `needMeasured: Bool?` – Being measured is needed for the next level.
 
 ## `Node64.StatusGroup` (struct)
 
@@ -3525,6 +4354,21 @@ An entry to send inside a `StatusPageGroupInput`.
 
 - `token: String` – Token of the check.
 - `label: String?` – Display name (up to 120 characters); empty uses the check's name.
+
+## `Node64.StatusPageItemsInput` (struct)
+
+Request body of `Node64/HC/StatusPages/addItems(_:_:)`.
+
+- `groupID: Int?` – Group to add to (`0` or `nil` = the first group).
+- `tokens: [String]?` – Check tokens.
+- `resources: [Resource]?` – Proxmox nodes, guests or Docker containers.
+
+## `Node64.StatusPageItemsInput.Resource` (struct)
+
+A system resource.
+
+- `systemID: Int?` – ID of the Proxmox or Docker system.
+- `key: String?`
 
 ## `Node64.StatusPageLanguage` (open enum)
 

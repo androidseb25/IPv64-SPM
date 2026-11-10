@@ -62,6 +62,9 @@ extension Node64 {
         public let createdAt: Date?
         /// Time of the last update.
         public let updatedAt: Date?
+        /// The new access key, only in the answer to a create or update with ``CDNAccessListInput/addKey``.
+        /// It is shown once; treat it as a secret. Not in the spec's response schema.
+        public let addKey: String?
 
         enum CodingKeys: String, CodingKey {
             case id, name
@@ -70,6 +73,37 @@ extension Node64 {
             case users, rules
             case createdAt = "created_at"
             case updatedAt = "updated_at"
+            case addKey = "add_key"
+        }
+    }
+
+    /// Forward-auth login service of an access list (`auth`).
+    public struct CDNAccessAuth: IPv64OpenEnum {
+        public let rawValue: String
+        public init(rawValue: String) { self.rawValue = rawValue }
+
+        /// Users of the list (empty string).
+        public static let users: Self = ""
+        public static let authentik: Self = "authentik"
+        public static let authelia: Self = "authelia"
+        public static let oauth2Proxy: Self = "oauth2-proxy"
+        public static let custom: Self = "custom"
+    }
+
+    /// Settings of the login service for forward auth (`forward` of ``CDNAccessListInput``).
+    public struct CDNAccessForward: Codable, Hashable, Sendable {
+        /// Check address, e.g. `http://authentik-server:9000/outpost.goauthentik.io/auth/traefik`.
+        public var address: String?
+        /// Response headers that go to the target.
+        public var headers: [String]?
+        /// Path of the return route on the host.
+        public var callback: String?
+
+        /// Creates an instance; pass only the fields you want to set.
+        public init(address: String? = nil, headers: [String]? = nil, callback: String? = nil) {
+            self.address = address
+            self.headers = headers
+            self.callback = callback
         }
     }
 
@@ -85,6 +119,18 @@ extension Node64 {
         public var users: [CDNAccessListUserInput]?
         /// IP rules of the list.
         public var rules: [CDNAccessRule]?
+        /// Sign in on a login page instead of the browser dialog.
+        public var loginPage: Bool?
+        /// Login service (forward auth); `""` = users of the list.
+        public var auth: CDNAccessAuth?
+        /// Settings of the login service.
+        public var forward: CDNAccessForward?
+        /// Pass Remote-User, -Email, -Groups and -Name on to the target.
+        public var passUser: Bool?
+        /// Name of a new access key. The node returns the key once in ``Node64/CDNAccessList/addKey``.
+        public var addKey: String?
+        /// Access keys to delete (start of the key or hint).
+        public var removeKeys: [String]?
 
         /// Creates an instance; pass only the fields you want to set.
         public init(
@@ -92,13 +138,25 @@ extension Node64 {
             satisfyAny: Bool? = nil,
             passAuth: Bool? = nil,
             users: [CDNAccessListUserInput]? = nil,
-            rules: [CDNAccessRule]? = nil
+            rules: [CDNAccessRule]? = nil,
+            loginPage: Bool? = nil,
+            auth: CDNAccessAuth? = nil,
+            forward: CDNAccessForward? = nil,
+            passUser: Bool? = nil,
+            addKey: String? = nil,
+            removeKeys: [String]? = nil
         ) {
             self.name = name
             self.satisfyAny = satisfyAny
             self.passAuth = passAuth
             self.users = users
             self.rules = rules
+            self.loginPage = loginPage
+            self.auth = auth
+            self.forward = forward
+            self.passUser = passUser
+            self.addKey = addKey
+            self.removeKeys = removeKeys
         }
 
         enum CodingKeys: String, CodingKey {
@@ -106,6 +164,11 @@ extension Node64 {
             case satisfyAny = "satisfy_any"
             case passAuth = "pass_auth"
             case users, rules
+            case loginPage = "login_page"
+            case auth, forward
+            case passUser = "pass_user"
+            case addKey = "add_key"
+            case removeKeys = "remove_keys"
         }
     }
 
@@ -207,6 +270,10 @@ extension Node64 {
         public let lists: [CDNBlocklist]?
         /// Exceptions: IP addresses or networks.
         public let allow: [String]?
+        /// Own deny list: IP addresses or networks rejected for all hosts and streams (the allow list wins).
+        public let deny: [String]?
+        /// Rejected by the own deny list since the start.
+        public let denied: Int?
         /// Rejected since the start.
         public let blocked: Int?
         /// At least one list is loaded and enabled.
@@ -221,15 +288,46 @@ extension Node64 {
         public let aiBots: CDNBlocklistAIBots?
 
         enum CodingKeys: String, CodingKey {
-            case lists, allow, blocked, active, countries
+            case lists, allow, deny, denied, blocked, active, countries
             case geoBlocked = "geo_blocked"
             case tokenSet = "token_set"
             case aiBots = "ai_bots"
         }
     }
 
+    /// Which rejections go to the honeypot (`route` of ``CDNHoneypotSettings``). Missing = default (everything except `geo`).
+    public struct CDNHoneypotRoute: Codable, Hashable, Sendable {
+        /// Rejections by the blocklists.
+        public var blocklist: Bool?
+        /// Rejections of IPs the honeypot reported.
+        public var honeypot: Bool?
+        /// Rejections of exploit attempts.
+        public var exploit: Bool?
+        /// Rejections of AI bots.
+        public var aiBot: Bool?
+        /// Rejections by the country filter.
+        public var geo: Bool?
+
+        /// Creates an instance; pass only the fields you want to set.
+        public init(blocklist: Bool? = nil, honeypot: Bool? = nil, exploit: Bool? = nil, aiBot: Bool? = nil, geo: Bool? = nil) {
+            self.blocklist = blocklist
+            self.honeypot = honeypot
+            self.exploit = exploit
+            self.aiBot = aiBot
+            self.geo = geo
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case blocklist, honeypot, exploit
+            case aiBot = "ai_bot"
+            case geo
+        }
+    }
+
     /// Honeypot64 settings. Schema `CDNHoneypotSettings`.
     public struct CDNHoneypotSettings: Codable, Hashable, Sendable {
+        /// Which rejections are handed to the honeypot.
+        public var route: CDNHoneypotRoute?
         /// Send requests without a matching host to the Honeypot64 web decoy.
         public var decoy: Bool?
         /// Send access metadata to the Honeypot64 log sensor.
@@ -240,7 +338,8 @@ extension Node64 {
         public var blockHours: Int?
 
         /// Creates an instance; pass only the fields you want to set.
-        public init(decoy: Bool? = nil, access: Bool? = nil, block: Bool? = nil, blockHours: Int? = nil) {
+        public init(decoy: Bool? = nil, access: Bool? = nil, block: Bool? = nil, blockHours: Int? = nil, route: CDNHoneypotRoute? = nil) {
+            self.route = route
             self.decoy = decoy
             self.access = access
             self.block = block
@@ -248,7 +347,7 @@ extension Node64 {
         }
 
         enum CodingKeys: String, CodingKey {
-            case decoy, access, block
+            case route, decoy, access, block
             case blockHours = "block_hours"
         }
     }

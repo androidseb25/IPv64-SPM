@@ -2,9 +2,9 @@
 
 Swift-Package für die [IPv64.net API v2](https://ipv64.net/api_v2_docs): DynDNS, DNS, Healthchecks (klassisch und 2.0), DNS-Failover, Statusseiten, Offline-Pages, CDN, Cloud Router, Gateways, Peers, DNS64, Honeypot64 und Threat Intelligence.
 
-Das Package deckt alle 192 Endpunkte der OpenAPI-Spezifikation (`https://ipv64.net/api/v2/openapi.json`) ab. Wo die Spec lückenhaft ist und wie der Client damit umgeht, steht in [`docs/IPV64_SPEC_GAPS.md`](docs/IPV64_SPEC_GAPS.md).
+Das Package deckt alle 201 Endpunkte der OpenAPI-Spezifikation (`https://ipv64.net/api/v2/openapi.json`) ab. Wo die Spec lückenhaft ist und wie der Client damit umgeht, steht in [`docs/IPV64_SPEC_GAPS.md`](docs/IPV64_SPEC_GAPS.md).
 
-Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-Node im eigenen Netz, mit allen 290 Endpunkten (siehe [Node64](#node64)).
+Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-Node im eigenen Netz, mit allen 361 Endpunkten (siehe [Node64](#node64)).
 
 - Swift 6 Language Mode mit strikter Concurrency-Prüfung
 - `async`/`await`, der Client ist `Sendable` und kann zwischen Tasks und Actors geteilt werden
@@ -14,7 +14,7 @@ Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-
 ## Für KI-Agenten
 
 > **AI coding agents:** read [`AGENTS.md`](AGENTS.md) before integrating this package. It lists the rules and pitfalls, plus recipes for common tasks (the recipes compile in the test target).
-> Exact signatures for all 192 endpoints are in [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md), searchable by HTTP endpoint. Every model with its properties and enum constants is in [`docs/MODELS.md`](docs/MODELS.md).
+> Exact signatures for all 201 endpoints are in [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md), searchable by HTTP endpoint. Every model with its properties and enum constants is in [`docs/MODELS.md`](docs/MODELS.md).
 > For the local node API (`Node64`) use [`docs/NODE64_API_REFERENCE.md`](docs/NODE64_API_REFERENCE.md) and [`docs/NODE64_MODELS.md`](docs/NODE64_MODELS.md), and read the Node64 section of `AGENTS.md`.
 > Do not guess method names or build URLs yourself.
 
@@ -65,7 +65,7 @@ Der Client `IPv64` gruppiert die Endpunkte nach den Bereichen der API:
 | `gateways` | Gateways, Port-Forwards, OSPF |
 | `peers` | WireGuard-Peers inkl. Config-Download |
 | `dns64` | DNS64-Clients, Regeln, Quellen |
-| `hc2` | Healthchecks 2.0: Checks, Kanäle, Wartungen, Incidents, Nodes |
+| `hc2` | Healthchecks 2.0: Checks, Kanäle, Wartungen, Incidents, Nodes, Statusseiten |
 | `honeypot` | Honeypot64-Reports, Sensoren, Statistik |
 | `threat` | IP-Reputation, Statistik, Passwort-Range, Blocklist-Feed, Frühwarnung |
 
@@ -180,13 +180,14 @@ let backup = try await node64.node.downloadDatabase()   // Data, enthält Geheim
 
 | Bereich | Inhalt |
 |---|---|
-| `node` | Status, Module, Einstellungen, API-Keys, Logs, Backup/Restore/Export/Import |
-| `hc` | Checks, Events, Wartung, Push, Online-Checks, Kanäle, Statusseiten, Docker, Proxmox |
+| `node` | Status, Module, Einstellungen, API-Keys, Logs, Backup/Restore/Export/Import, Benutzer, MCP, Selbst-Update |
+| `hc` | Checks, Events, Wartung, Push, Online-Checks, Kanäle (lokal und bei ipv64), Statusseiten, Docker, Proxmox |
 | `dyndns` | DynDNS-Updater und Ziele |
-| `dns64` | Resolver-Statistik, Listen, Upstreams, Cache, Records, Gruppen, Forwards, Rewrites, Zonen |
-| `proxy64` | Reverse Proxy: Hosts, Streams, Zugriffslisten, Schutz, ipv64-Online-Anbindung |
-| `ports`, `certificates` | Ports, Eingang (Edge), TLS-Zertifikate, CAs, ACME |
-| `link`, `cluster`, `honeypot` | Verknüpfung mit ipv64.net, lokaler Node-Verbund, Honeypot64 |
+| `dns64` | Resolver-Statistik, Block- und Freigabelisten, eigene Sperrliste, Upstreams, Cache, Records, Gruppen, Forwards, Rewrites, Zonen (TSIG) |
+| `proxy64` | Reverse Proxy: Hosts, Streams, Zugriffslisten, Schutz, Docker-Abgleich, ipv64-Online-Anbindung und CDN64-Server |
+| `ports`, `certificates` | Ports, Eingang (Edge), TLS-Zertifikate, CAs, ACME, DNS-01-Prüfung |
+| `link`, `cluster`, `honeypot` | Verknüpfung mit ipv64.net (auch per Code), lokaler Node-Verbund, Honeypot64 inkl. Frühwarnung |
+| `sonar64` | Sonar64-Messknoten: Status, Messungen, Einstellungen |
 
 Unterschiede zu `IPv64`:
 

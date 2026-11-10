@@ -79,6 +79,8 @@ public struct ThreatWatchAlert: Codable, Hashable, Sendable, Identifiable {
     public let lastSeen: String?
     /// Creation time.
     public let createdAt: Date?
+    /// Why the IP stood out (last 14 days); `nil` for older alerts.
+    public let details: ThreatWatchAlertDetails?
 
     enum CodingKeys: String, CodingKey {
         case id, ip, cidr
@@ -87,6 +89,7 @@ public struct ThreatWatchAlert: Codable, Hashable, Sendable, Identifiable {
         case firstSeen = "first_seen"
         case lastSeen = "last_seen"
         case createdAt = "created_at"
+        case details
     }
 
     /// Origin of an alert.
@@ -98,6 +101,63 @@ public struct ThreatWatchAlert: Codable, Hashable, Sendable, Identifiable {
         public static let network: Self = "network"
         /// A DynDNS IP of the account.
         public static let dyndns: Self = "dyndns"
+    }
+}
+
+/// Why an IP triggered an alert: counts and per-origin breakdown, never sensors, accounts or contents.
+public struct ThreatWatchAlertDetails: Codable, Hashable, Sendable {
+    /// Number of reporting accounts.
+    public let accounts: Int?
+    /// Number of sensors.
+    public let sensors: Int?
+    /// Number of events.
+    public let events: Int?
+    /// Lists the IP is on, e.g. `v64`, `ssh`.
+    public let lists: [String]?
+    /// Reason for the rating, e.g. `threshold`, `customer_ip`, `allowlist`.
+    public let reason: String?
+    /// At most 8 rows, most frequent first.
+    public let seen: [Seen]?
+
+    /// One row of what was seen.
+    public struct Seen: Codable, Hashable, Sendable {
+        /// Where the sighting came from.
+        public let origin: Origin?
+        /// Service, e.g. `ssh`.
+        public let service: String?
+        /// Port, e.g. `22`.
+        public let port: Int?
+        /// Attack kind, e.g. `ssh:bruteforce`.
+        public let kind: String?
+        /// Rule of the log sensor, otherwise empty.
+        public let rule: String?
+        /// Number of sightings.
+        public let count: Int?
+        /// Number of sensors.
+        public let sensors: Int?
+        /// Last sighting.
+        public let last: Date?
+
+        enum CodingKeys: String, CodingKey {
+            case origin, service, port, kind, rule, count, sensors, last
+        }
+
+        /// Origin of a sighting.
+        public struct Origin: IPv64OpenEnum {
+            public let rawValue: String
+            public init(rawValue: String) { self.rawValue = rawValue }
+
+            /// Honeypot sensor.
+            public static let honeypot: Self = "honeypot"
+            /// Log sensor.
+            public static let log: Self = "log"
+            /// Syslog sensor.
+            public static let syslog: Self = "syslog"
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case accounts, sensors, events, lists, reason, seen
     }
 }
 

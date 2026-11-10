@@ -96,6 +96,30 @@ extension Node64.Link {
         try await client.sendWithoutContent(Request(.delete, "/ipv64/key"))
     }
 
+    /// Starts linking by code: fetches a code from the hub. Enter it in the ipv64.net portal; afterwards
+    /// ``codeStatus()`` reports `linked: true`. Without a code use ``connect(location:remoteManagement:)``.
+    ///
+    /// Errors: `409` already linked, `502` hub unreachable, `503` linking not available.
+    ///
+    /// `POST /link/start`
+    public func startCodeLink() async throws -> Node64.LinkCode {
+        try await client.send(Request(.post, "/link/start"))
+    }
+
+    /// State of linking by code (asks the hub while a code is open).
+    ///
+    /// `GET /link/status`
+    public func codeStatus() async throws -> Node64.LinkCodeStatus {
+        try await client.send(Request(.get, "/link/status"))
+    }
+
+    /// Discards the open link code. Fails with `503` when linking is not available.
+    ///
+    /// `POST /link/cancel`
+    public func cancelCodeLink() async throws {
+        try await client.sendWithoutContent(Request(.post, "/link/cancel"))
+    }
+
     private struct ConnectBody: Encodable, Sendable {
         let location: String?
         let remoteMgmt: Node64.LinkRemoteManagement?

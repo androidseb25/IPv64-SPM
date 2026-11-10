@@ -1,6 +1,6 @@
 # Node64 – Lücken in der OpenAPI-Spec
 
-Stand: Spec „Node64 – lokale API“ 1.2.0, abgeglichen beim Bau des Swift-Clients `Node64`.
+Stand: Spec „Node64 – lokale API“ 1.2.0 (361 Operationen), zuletzt abgeglichen am 09.11.2026. Die Spec hat seit dem Bau des Clients rund 70 Endpunkte dazubekommen, ohne die Versionsnummer zu ändern.
 Jede Lücke hier ist im Client mit einer Annahme oder einem untypisierten Rückgabewert gelöst. Wird die Spec ergänzt, lässt sich der Client typisieren.
 
 ## 1. 2xx-Antworten ohne Schema
@@ -19,6 +19,7 @@ Der Client liefert hier rohes `JSONValue`:
 | `GET /cdn64/status`, `GET /cdn64/stats` | `proxy64.status`, `proxy64.stats` (nur `type: object`; Aufbau von `stats` steht nur in der Beschreibung) |
 | `GET /acme-cas/presets` | `certificates.acmeAuthorities.presets` (`[JSONValue]`) |
 | `GET /openapi.json` | `node.openAPI` (erwartbar) |
+| `GET /update`, `POST /update/check`, `PUT /update/settings` | `node.update.get`, `.check`, `.updateSettings` |
 
 **Vorschlag:** Bei `POST/PUT /checks` und `/maintenance` das angelegte bzw. geänderte Objekt als `Check` bzw. `Maintenance` dokumentieren.
 
@@ -36,6 +37,9 @@ Diese Antworten hat der Client aus dem Beschreibungstext modelliert. Alle Felder
 - `GET /modules`: `changed` und der Changelog-Schlüssel (`changelog` angenommen) stehen nur im Text.
 - `PUT /logging`: liefert `{level, modules}`, `GET` zusätzlich `known_modules`.
 - `PUT /edge/ui`: Antwort dokumentiert nur `name` und `public`.
+- `GET /dyndns/status`: das Objekt `cluster` (`leader`, `this_node`, `preferred_node`) steht nur im Text.
+- `GET /group`: `user_conflicts` und `acme_accounts` fehlen im Schema und werden nur bei `POST /group/users` und `/group/acme` erwähnt. Der Client liefert sie als `JSONValue`.
+- Freie Objekte ohne Felder, im Client `JSONValue`: `Sonar64Status.me`, `PVESystem.pbs`, `Honeypot64Watch.state`, `POST /honeypot/watch/check` → `state`, die Einträge von `GET /cdn64/docker` → `containers` und `GET /cdn64/protection` → `daily`.
 - Dateien ohne Content-Type: `GET /dns64/records/export`, `GET /cas/{id}/file`.
 
 ## 3. Zeitstempel ohne `format: date-time`
@@ -67,6 +71,14 @@ Teilweise ändern oder vollständig ersetzen? Unklar bei:
 - `DNS64Zone.dynamic` / `tsig_name`: als `readOnly` markiert, laut Text „auf der Seite einschaltbar“. Dafür gibt es keinen API-Endpunkt.
 - `readOnly` ist nur teilweise gesetzt, obwohl viele Schemas zugleich Antwort und Request-Body sind (`DNS64Record`, `DNS64Forward`, `DNS64Rewrite`, `DNS64Zone`, `DNS64GroupMember`, `DNS64GroupDomain`, `DNS64Schedule`, `DNS64Settings`, `Check`, `StatusPage`, `Channel`). Eigene `…Input`-Schemas oder konsequentes `readOnly` würden Clients eindeutig machen.
 - Identifikatoren wie `id` in `DNS64Record`, `ProxyHost`, `Certificate`, `CA` sowie `Measurement.seq` und `ClusterMember.node_id` sind nicht `required`. Der Client behandelt sie trotzdem als nicht-optional.
+- `422` mit Ergebnis-Body: `POST /dns64/lists`, `POST /dns64/allowlists` (mit `urls`, wenn keine Liste hinzukam) und `PUT /dns64/denylist` (alle Einträge ungültig) liefern bei `422` dasselbe Ergebnisobjekt wie bei Erfolg. Weil dieser Body keine Fehlerfelder hat, wirft der Client `Node64Error.httpStatus(code: 422, body:)`; den Body decodiert man selbst als `DNS64ListsAddResult` bzw. `DNS64DenylistReplaceResult`.
+- `POST /dns64/lists`, `POST /dns64/allowlists`: Die Antwort ist `oneOf` (Einstellungen oder Ergebnis je URL). Der Client hat dafür je zwei Methoden (`add(_:name:)` und `add(urls:)`).
+- `Sonar64Settings`: `lat`/`lon` können `null` sein, `access`/`device` auch `""`, obwohl die Enums das nicht enthalten. Der Client hat dafür die Konstante `.unset`.
+- `ModuleStatus` (`GET /modules`) hat jetzt ein Schema, `changed` und `changelog` stehen aber weiter nur im Text.
+- `POST/PUT /cdn64/access-lists` mit `add_key`: Der neue Schlüssel steht laut Text „einmal in der Antwort“, das Schema `CDNAccessList` hat dafür aber kein Feld. Der Client liest ihn als String aus `add_key` (`CDNAccessList.addKey`). Auch `login_page`, `auth`, `forward` und `pass_user` fehlen in der Antwort, sie lassen sich also nicht zurücklesen.
+- Honeypot64 `watch`/`cert`: Fehler kommen als `{error, message}` statt `{error, text}`. Der Client legt `message` in `text` ab; `error` enthält dort den Code (`no_key`, `limit_reached`).
+- `GET /update`: Die Feldnamen stehen nur im Text und groß geschrieben (`Mode`, `Channel`, …), vermutlich Go-Felder ohne JSON-Tags.
+- `POST /certs/dns-check/run` dauert bis zu 30 s, so lange wie das Standard-Timeout des Clients.
 - Keine `operationId`s: Generatoren müssen Namen raten.
 - Ein Fehlerbeschreibungstext steht als Response-Objekt statt als `description` (`POST /cdn64/hosts` → `422`).
 - `servers` nennt `http://node.seb.home64.de/api`, eine konkrete, private Node über HTTP. Für eine allgemeine Spec wäre eine Server-Variable passender (`{scheme}://{host}/api`).

@@ -43,6 +43,16 @@ extension Node64 {
         public let transport: CDNOnlineTransport?
         /// Streams since the start.
         public let total: Int?
+        /// Round-trip time to the server in ms.
+        public let rttMs: Double?
+        /// Packet loss from the node to this server over the last 30 s in percent (visitor downloads); `-1` = unknown.
+        public let lossPct: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case name, host, connected, transport, total
+            case rttMs = "rtt_ms"
+            case lossPct = "loss_pct"
+        }
     }
 
     /// A name switched on at CDN64.

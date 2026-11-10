@@ -81,11 +81,13 @@ extension Node64 {
         public let value: String
         /// Optional label (used for device names in zones).
         public let label: String?
+        /// Tags of the device (at most 10, each at most 24 characters).
+        public let tags: [String]?
 
         enum CodingKeys: String, CodingKey {
             case id
             case groupID = "group_id"
-            case kind, value, label
+            case kind, value, label, tags
         }
     }
 

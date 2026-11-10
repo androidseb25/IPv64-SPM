@@ -121,14 +121,72 @@ extension Node64 {
         public let syncModules: [ClusterSyncModule]?
         /// Own HTTPS port of this node, `0` = none (the cluster then uses the HTTP port, which also speaks TLS).
         public let httpsPort: Int?
+        /// Users with the same name but different cluster IDs (free-form; resolve with ``Node64/Cluster/resolveUserConflict(uid:)``).
+        ///
+        /// Not in the response schema; named only in the description of `POST /group/users`.
+        public let userConflicts: JSONValue?
+        /// Differing ACME accounts (free-form; resolve with ``Node64/Cluster/resolveACMEConflict(thumbprint:)``).
+        ///
+        /// Not in the response schema; named only in the description of `POST /group/acme`.
+        public let acmeAccounts: JSONValue?
 
         enum CodingKeys: String, CodingKey {
             case linked, forwarder, code, members
+            case userConflicts = "user_conflicts"
+            case acmeAccounts = "acme_accounts"
             case accountID = "account_id"
             case forwarderSelf = "forwarder_self"
             case codeExpires = "code_expires"
             case syncModules = "sync_modules"
             case httpsPort = "https_port"
+        }
+    }
+
+    /// Result of ``Node64/Cluster/resolveUserConflict(uid:)``.
+    public struct ClusterUserResolution: Codable, Hashable, Sendable {
+        /// User name.
+        public let username: String?
+        /// Cluster ID of the kept user.
+        public let chosen: String?
+        /// Versions that were dropped.
+        public let dropped: [ClusterDroppedUser]?
+    }
+
+    /// A user version dropped by ``Node64/Cluster/resolveUserConflict(uid:)``.
+    public struct ClusterDroppedUser: Codable, Hashable, Sendable {
+        /// Cluster ID of the user.
+        public let uid: String?
+        /// Node the version lived on.
+        public let nodeID: String?
+        /// The version was on this node.
+        public let own: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case uid, own
+            case nodeID = "node_id"
+        }
+    }
+
+    /// Result of ``Node64/Cluster/resolveACMEConflict(thumbprint:)``.
+    public struct ClusterACMEResolution: Codable, Hashable, Sendable {
+        /// Thumbprint of the kept account.
+        public let chosen: String?
+        /// Accounts that were dropped.
+        public let dropped: [ClusterDroppedACMEAccount]?
+    }
+
+    /// An ACME account dropped by ``Node64/Cluster/resolveACMEConflict(thumbprint:)``.
+    public struct ClusterDroppedACMEAccount: Codable, Hashable, Sendable {
+        /// Thumbprint of the account.
+        public let thumbprint: String?
+        /// Node the account lived on.
+        public let nodeID: String?
+        /// Contact e-mail of the account.
+        public let email: String?
+
+        enum CodingKeys: String, CodingKey {
+            case thumbprint, email
+            case nodeID = "node_id"
         }
     }
 

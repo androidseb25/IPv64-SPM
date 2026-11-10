@@ -117,6 +117,19 @@ extension Node64 {
         public static let inherit: LogLevel = "inherit"
     }
 
+    /// Which requests the API log records.
+    public struct APILogMode: IPv64OpenEnum {
+        public let rawValue: String
+        public init(rawValue: String) { self.rawValue = rawValue }
+
+        /// `off`
+        public static let off: APILogMode = "off"
+        /// `keys`: only requests made with an API key.
+        public static let keys: APILogMode = "keys"
+        /// `all`: also requests from the web interface.
+        public static let all: APILogMode = "all"
+    }
+
     /// Result of ``Node64/Node/status()``.
     public struct NodeStatus: Codable, Hashable, Sendable {
         /// Facts about this node.
@@ -189,9 +202,12 @@ extension Node64 {
         public let modules: [String: String]?
         /// Names of all modules that accept a level (only returned by the `GET`).
         public let knownModules: [String]?
+        /// API log: every request to `/api/` as a log line (without content), independent of the level.
+        public let apiLog: APILogMode?
 
         enum CodingKeys: String, CodingKey {
             case level, modules
+            case apiLog = "api_log"
             case knownModules = "known_modules"
         }
     }

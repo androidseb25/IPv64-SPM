@@ -8,6 +8,8 @@ extension Node64 {
 
         /// Proxmox VE.
         public static let pve: Self = "pve"
+        /// Proxmox Backup Server.
+        public static let pbs: Self = "pbs"
         /// Docker host.
         public static let docker: Self = "docker"
     }
@@ -19,6 +21,8 @@ extension Node64 {
 
         /// Only Proxmox systems (default).
         public static let pve: Self = "pve"
+        /// Only Proxmox Backup Servers.
+        public static let pbs: Self = "pbs"
         /// Only Docker hosts.
         public static let docker: Self = "docker"
         /// All systems.
@@ -97,6 +101,32 @@ extension Node64 {
         public let guestsRunning: Int?
         /// Number of guests in a bad state.
         public let guestsBad: Int?
+        /// Docker hosts via SSH/TLS: which credentials are stored (never the keys).
+        public let credentials: DockerCredentials?
+        /// Proxmox VE only: storages from the last query.
+        public let storages: [Storage]?
+        /// Proxmox Backup Server only: datastores, services, update, failed tasks (free-form object in the spec).
+        public let pbs: JSONValue?
+
+        /// Storage of a Proxmox VE system.
+        public struct Storage: Codable, Hashable, Sendable {
+            /// Storage name.
+            public let storage: String?
+            /// Node.
+            public let node: String?
+            /// Shared storage.
+            public let shared: Bool?
+            /// Storage type.
+            public let type: String?
+            /// Content types.
+            public let content: String?
+            /// Status.
+            public let status: String?
+            /// Total bytes.
+            public let total: Int?
+            /// Used bytes.
+            public let used: Int?
+        }
 
         enum CodingKeys: String, CodingKey {
             case id, kind, name, addresses
@@ -111,6 +141,7 @@ extension Node64 {
             case guests
             case guestsRunning = "guests_running"
             case guestsBad = "guests_bad"
+            case credentials, storages, pbs
         }
     }
 
@@ -118,6 +149,8 @@ extension Node64 {
     ///
     /// The secret is required on create; on update an empty secret keeps the stored one.
     public struct PVESystemInput: Encodable, Hashable, Sendable {
+        /// `pve` (default) or `pbs`; only on create and probe (Docker hosts use `/healthchecks/docker`).
+        public var kind: PVESystemKind?
         /// Name.
         public var name: String?
         /// Addresses.
@@ -132,16 +165,34 @@ extension Node64 {
         public var interval: Int?
         /// Switch monitoring on or off (default on); toggling pauses or starts the system's checks.
         public var enabled: Bool?
+        /// Docker only: private SSH or TLS client key (PEM, write only, secret); empty keeps the stored one.
+        public var privateKey: String?
+        /// Docker (https) only: TLS client certificate (PEM); `""` removes certificate and key.
+        public var cert: String?
+        /// Docker (https) only: CA of the Docker daemon (PEM); `""` removes it.
+        public var ca: String?
+        /// Docker (ssh) only: generate and store a new ed25519 key; the public part appears in `credentials.publicKey`.
+        public var generateKey: Bool?
 
         public init(
+            kind: PVESystemKind? = nil,
             name: String? = nil,
             addresses: [String]? = nil,
             tokenID: String? = nil,
             secret: String? = nil,
             pinSHA256: String? = nil,
             interval: Int? = nil,
-            enabled: Bool? = nil
+            enabled: Bool? = nil,
+            privateKey: String? = nil,
+            cert: String? = nil,
+            ca: String? = nil,
+            generateKey: Bool? = nil
         ) {
+            self.kind = kind
+            self.privateKey = privateKey
+            self.cert = cert
+            self.ca = ca
+            self.generateKey = generateKey
             self.name = name
             self.addresses = addresses
             self.tokenID = tokenID
@@ -152,11 +203,14 @@ extension Node64 {
         }
 
         enum CodingKeys: String, CodingKey {
-            case name, addresses
+            case kind, name, addresses
             case tokenID = "token_id"
             case secret
             case pinSHA256 = "pin_sha256"
             case interval, enabled
+            case privateKey = "private_key"
+            case cert, ca
+            case generateKey = "generate_key"
         }
     }
 

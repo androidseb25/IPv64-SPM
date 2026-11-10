@@ -27,7 +27,7 @@ Each method's doc comment in the sources also ends with its endpoint, so `grep -
   Areas: `meta`, `account`, `apiKeys`, `domains`, `records`, `integrations`, `healthchecks`, `failover`,
   `statusPages`, `offlinePages`, `cdn` (`.records`, `.mappings`, `.accessList`), `dns64` (`.rules`, `.sources`),
   `cloudRouters` (`.routes`, `.firewall`, `.publicIPs`), `gateways` (`.portForwards`, `.peers`), `peers`,
-  `hc2` (`.checks`, `.channels`, `.maintenances`, `.incidents`, `.nodes`), `honeypot`, `threat` (`.watch`).
+  `hc2` (`.checks`, `.channels`, `.maintenances`, `.incidents`, `.nodes`, `.statusPages`), `honeypot`, `threat` (`.watch`).
 - Responses are unwrapped for you: methods return the model, not the `{"data": …}` envelope.
 
 ## Rules
@@ -38,7 +38,7 @@ Each method's doc comment in the sources also ends with its endpoint, so `grep -
 4. **Unwrap optional model properties.** The spec marks almost no response fields as required, so only identifiers (`id`, `token`, `nodeID`, …) are non-optional. Write `domain.name ?? ""`, not `domain.name!`.
 5. **Open enums need a `default` branch.** Types like `RecordType`, `DomainKind` and `CloudRouterState` are `IPv64OpenEnum` structs, not Swift enums. Use the constants (`.a`, `.ready`) for comparisons, and `switch` with `default:`. Unknown server values decode as `Type(rawValue: "…")` instead of failing.
 6. **Use the identifier type of the signature.** Some areas use `Int` IDs, others `String` IDs or tokens:
-   - `Int`: `apiKeys`, `integrations`, `statusPages`, `hc2.channels`, `hc2.maintenances`, `cdn.accessList`, `dns64.rules`, `cloudRouters.routes/firewall/publicIPs`, `gateways.portForwards`, `threat.watch`.
+   - `Int`: `apiKeys`, `integrations`, `statusPages`, `hc2.statusPages` (also notice IDs), `hc2.channels`, `hc2.maintenances`, `cdn.accessList`, `dns64.rules`, `cloudRouters.routes/firewall/publicIPs`, `gateways.portForwards`, `threat.watch`.
    - `String`: `domains` (ID or name), `records` (ID or record token), `healthchecks`, `hc2.checks` (token), `hc2.nodes` (node ID), `failover`, `offlinePages`, `cdn` (token), `cdn.mappings`, `dns64` (token), `dns64.sources`, `cloudRouters`, `gateways`, `peers`.
    - A numeric record ID is passed as a string: `ipv64.records.get(String(record.id))`.
 7. **PATCH sends only what you pass.** `nil` means "leave unchanged". Where the API allows it, an empty string `""` clears a value. Update methods take either labeled parameters or a `…Input` struct (`update(_ id, _ input)`); build the input with only the fields you want to change.
@@ -457,7 +457,7 @@ Everything above about `IPv64` does **not** automatically apply here; read this 
 - All models are **nested in `Node64`** (`Node64.Check`, `Node64.APIKey`, `Node64.StatusPage`) so they never collide with the ipv64.net models of the same name. Always qualify them.
 - Errors are `Node64Error`, not `IPv64Error`. `.api(Node64APIError)` carries `status`, `error`, `field`, `fields`, `code`, `key`, `text` and `retryAfter`.
 - Responses have **no** `{"data": …}` envelope. Lists are plain arrays (no `IPv64Page`).
-- Areas: `node` (`.modules`, `.apiKeys`), `hc` (`.checks`, `.maintenance`, `.onlineChecks`, `.channels`, `.statusPages` (`.notices`), `.docker` (`.systems`), `.proxmox` (`.systems`)), `dyndns` (`.targets`), `dns64` (`.lists`, `.upstreams`, `.cache`, `.allowlist`, `.records`, `.groups` (`.members`, `.domains`, `.schedules`), `.devices`, `.forwards`, `.rewrites`, `.zones`), `proxy64` (`.hosts`, `.streams`, `.accessLists`, `.blocklists`, `.honeypot`, `.limits`, `.online`), `ports` (`.edge`), `certificates` (`.account`, `.dnsAccounts`, `.authorities`, `.acmeAuthorities`), `link`, `cluster`, `honeypot`.
+- Areas: `node` (`.modules`, `.apiKeys`, `.users`, `.mcp`, `.update`), `hc` (`.checks`, `.maintenance`, `.onlineChecks`, `.channels`, `.ipv64Channels`, `.statusPages` (`.notices`), `.docker` (`.systems`), `.proxmox` (`.systems`)), `dyndns` (`.targets`), `dns64` (`.lists`, `.allowLists`, `.denylist`, `.upstreams`, `.cache`, `.allowlist`, `.records`, `.groups` (`.members`, `.domains`, `.schedules`), `.devices`, `.forwards`, `.rewrites`, `.zones`), `proxy64` (`.hosts`, `.streams`, `.accessLists`, `.blocklists`, `.honeypot`, `.limits`, `.online`), `ports` (`.edge`), `certificates` (`.account`, `.dnsAccounts`, `.authorities`, `.acmeAuthorities`), `link`, `cluster`, `honeypot` (`.watch`), `sonar64`.
 
 ## Rules
 
@@ -471,8 +471,8 @@ Everything above about `IPv64` does **not** automatically apply here; read this 
 3. **404 can mean "module switched off"**, not only "not found" (Healthchecks, DynDNS, DNS64, …). Check `node64.node.modules.list()` before assuming a missing resource.
 4. **Rate limit per IP:** 429 with `Retry-After` (about 10 s); after 5 invalid API keys only one attempt per 30 s. Wait `retryAfter` seconds.
 5. **Push heartbeats need no API key:** `Node64(baseURL:apiKey: nil).hc.push(token, status:message:)`. The check token is the secret.
-6. **Downloads are `Data`** (`node.downloadDatabase()`, certificate bundles/P12, `dns64.caCertificate()`, `dns64.mobileConfig(...)`). Backups and key material are secrets: store them encrypted, never log them.
-7. **Destructive calls** (`node.restoreBackup`, `node.importConfiguration`, `node.reset`, `link.unlink`, `cluster.leave`) need explicit user confirmation in your app.
+6. **Downloads are `Data`** (`node.downloadDatabase()`, certificate bundles/P12, `dns64.caCertificate()`, `dns64.mobileConfig(...)`). Backups and key material are secrets: store them encrypted, never log them. The same goes for the MCP key from `node.mcp.createKey` (shown once) and TSIG keys (`dns64.zones.tsig`/`regenerateTSIG`).
+7. **Destructive calls** (`node.restoreBackup`, `node.importConfiguration`, `node.reset`, `link.unlink`, `cluster.leave`, `node.users.delete`, `cluster.resolveUserConflict`/`resolveACMEConflict`, `sonar64.updateSettings` with `participate: false`) and calls that restart the node (`node.update.apply`, `node.update.reset`) need explicit user confirmation in your app.
 8. **Some timestamps are `String`**, because the spec does not mark them as `date-time` (e.g. `Check.createdAt`, `CheckState.since`, `CheckEvent.time`). Parse them with `ISO8601DateFormatter` when needed.
 9. **Paging:** lists with `before` (events, measurements, audit, deliveries, PROXY64 log) return the newest entries; pass the last item's `id` (or `seq`) as `before` for older ones. `dns64.log` uses `limit`/`offset`.
 10. Open enums, optional properties and identifier types work as for `IPv64` (rules 4–6 above): unwrap optionals, `switch` with `default`, use the parameter type of the signature.

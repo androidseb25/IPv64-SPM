@@ -138,6 +138,15 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /hc2/nodes/{node_id}/commands` | `ipv64.hc2.nodes.sendCommand` |
 | `GET /hc2/settings` | `ipv64.hc2.settings` |
 | `PATCH /hc2/settings` | `ipv64.hc2.updateSettings` |
+| `GET /hc2/status-pages` | `ipv64.hc2.statusPages.list` |
+| `POST /hc2/status-pages` | `ipv64.hc2.statusPages.create` |
+| `DELETE /hc2/status-pages/{id}` | `ipv64.hc2.statusPages.delete` |
+| `GET /hc2/status-pages/{id}` | `ipv64.hc2.statusPages.get` |
+| `PATCH /hc2/status-pages/{id}` | `ipv64.hc2.statusPages.update` |
+| `GET /hc2/status-pages/{id}/notices` | `ipv64.hc2.statusPages.notices` |
+| `POST /hc2/status-pages/{id}/notices` | `ipv64.hc2.statusPages.createNotice` |
+| `DELETE /hc2/status-pages/{id}/notices/{nid}` | `ipv64.hc2.statusPages.deleteNotice` |
+| `PATCH /hc2/status-pages/{id}/notices/{nid}` | `ipv64.hc2.statusPages.updateNotice` |
 | `GET /hc2/testruns/{id}` | `ipv64.hc2.checks.testrun` |
 | `GET /health` | `ipv64.meta.health` |
 | `GET /healthchecks` | `ipv64.healthchecks.list` |
@@ -1347,6 +1356,82 @@ func sendCommand(_ nodeID: String, name: HC2CommandName, arguments: HC2CommandAr
 ```
 
 Sends a command to a node. The node only accepts commands if its remote management allows it.
+
+## `ipv64.hc2.statusPages`
+
+Public status pages and their notices.
+
+### `ipv64.hc2.statusPages.list` `GET /hc2/status-pages`
+
+```swift
+func list() async throws -> [HC2StatusPage]
+```
+
+All status pages (without groups).
+
+### `ipv64.hc2.statusPages.create` `POST /hc2/status-pages`
+
+```swift
+func create(_ input: HC2StatusPageInput) async throws -> HC2StatusPage
+```
+
+Creates a status page. `title` is required.
+
+### `ipv64.hc2.statusPages.get` `GET /hc2/status-pages/{id}`
+
+```swift
+func get(_ id: Int) async throws -> HC2StatusPage
+```
+
+A single status page including its groups.
+
+### `ipv64.hc2.statusPages.update` `PATCH /hc2/status-pages/{id}`
+
+```swift
+func update(_ id: Int, _ input: HC2StatusPageInput) async throws -> HC2StatusPage
+```
+
+Changes a status page. Only non-`nil` fields are changed; `groups` replaces all groups.
+
+### `ipv64.hc2.statusPages.delete` `DELETE /hc2/status-pages/{id}`
+
+```swift
+func delete(_ id: Int) async throws
+```
+
+Deletes a status page together with its notices; the address becomes free.
+
+### `ipv64.hc2.statusPages.notices` `GET /hc2/status-pages/{id}/notices`
+
+```swift
+func notices(_ page: Int) async throws -> [HC2StatusNotice]
+```
+
+Notices of a status page.
+
+### `ipv64.hc2.statusPages.createNotice` `POST /hc2/status-pages/{id}/notices`
+
+```swift
+func createNotice(_ page: Int, _ input: HC2StatusNoticeInput) async throws -> HC2StatusNotice
+```
+
+Creates a notice on a status page. `title` is required.
+
+### `ipv64.hc2.statusPages.updateNotice` `PATCH /hc2/status-pages/{id}/notices/{nid}`
+
+```swift
+func updateNotice(_ page: Int, notice: Int, _ input: HC2StatusNoticeInput) async throws -> HC2StatusNotice
+```
+
+Changes a notice. Only non-`nil` fields are changed.
+
+### `ipv64.hc2.statusPages.deleteNotice` `DELETE /hc2/status-pages/{id}/notices/{nid}`
+
+```swift
+func deleteNotice(_ page: Int, notice: Int) async throws
+```
+
+Deletes a notice.
 
 ## `ipv64.healthchecks`
 

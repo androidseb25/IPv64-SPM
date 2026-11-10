@@ -64,6 +64,29 @@ extension Node64.DynDNS {
         try await client.send(Request(.put, "/dyndns/settings", body: .json(settings)))
     }
 
+    /// Chooses the preferred node of the cluster for DynDNS updates. Stored on this node and shared in the cluster.
+    ///
+    /// Errors: `400` field missing, `422` not a node of the DynDNS area.
+    ///
+    /// - Parameter node: Node ID; empty string = the node with the smallest ID.
+    /// - Returns: The stored preferred node ID.
+    ///
+    /// `PUT /dyndns/cluster`
+    public func setPreferredNode(_ node: String) async throws -> String? {
+        let result: Node64.DynDNSClusterPreference = try await client.send(
+            Request(.put, "/dyndns/cluster", body: .json(ClusterBody(preferredNode: node)))
+        )
+        return result.preferredNode
+    }
+
+    private struct ClusterBody: Encodable, Sendable {
+        let preferredNode: String
+
+        enum CodingKeys: String, CodingKey {
+            case preferredNode = "preferred_node"
+        }
+    }
+
     /// Names of the ipv64 account that can be chosen (without tokens), with existing A/AAAA records and suggested modes.
     ///
     /// Needs the central ipv64 API key (otherwise 409).

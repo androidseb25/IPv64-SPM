@@ -5,7 +5,7 @@ extension IPv64 {
     public var hc2: HC2 { HC2(client: self) }
 
     /// Endpoints of the *Healthchecks 2.0* area. Resources live in the sub-namespaces
-    /// ``checks``, ``channels``, ``maintenances``, ``incidents`` and ``nodes``.
+    /// ``checks``, ``channels``, ``maintenances``, ``incidents``, ``statusPages`` and ``nodes``.
     public struct HC2: Sendable {
         let client: IPv64
 
@@ -17,6 +17,8 @@ extension IPv64 {
         public var maintenances: Maintenances { Maintenances(client: client) }
         /// Incidents (periods of failure).
         public var incidents: Incidents { Incidents(client: client) }
+        /// Public status pages and their notices.
+        public var statusPages: StatusPages { StatusPages(client: client) }
         /// Node64 nodes.
         public var nodes: Nodes { Nodes(client: client) }
 

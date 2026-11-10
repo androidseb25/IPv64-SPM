@@ -63,14 +63,16 @@ extension Node64.Node {
     ///   - level: New global level.
     ///   - resetMinutes: Reset `debug` after this many minutes, `0` = never.
     ///   - modules: Per-module levels; use `inherit` to follow the global level.
+    ///   - apiLog: API log (every request to `/api/` as a log line, without content); `nil` leaves it unchanged. Survives a restart.
     ///
     /// `PUT /logging`
     public func updateLogging(
         level: Node64.LogLevel? = nil,
         resetMinutes: Int? = nil,
-        modules: [String: String]? = nil
+        modules: [String: String]? = nil,
+        apiLog: Node64.APILogMode? = nil
     ) async throws -> Node64.LogSettings {
-        try await client.send(Request(.put, "/logging", body: .json(LoggingBody(level: level, resetMinutes: resetMinutes, modules: modules))))
+        try await client.send(Request(.put, "/logging", body: .json(LoggingBody(level: level, resetMinutes: resetMinutes, modules: modules, apiLog: apiLog))))
     }
 
     /// Reads data retention of the measurements and the chart resolution.
@@ -141,9 +143,11 @@ extension Node64.Node {
         let level: Node64.LogLevel?
         let resetMinutes: Int?
         let modules: [String: String]?
+        let apiLog: Node64.APILogMode?
 
         enum CodingKeys: String, CodingKey {
             case level, modules
+            case apiLog = "api_log"
             case resetMinutes = "reset_minutes"
         }
     }

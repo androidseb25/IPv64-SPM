@@ -91,6 +91,9 @@ extension Node64 {
         public var defaultURL: String?
         /// HTML for ``EdgeDefaultResponse/html``.
         public var defaultHTML: String?
+        /// Addresses or networks of upstream proxies (e.g. Traefik with `proxyProtocol`) that send a PROXY header (v1/v2)
+        /// with the real client address on ports 80/443, e.g. `172.18.0.0/16`.
+        public var proxyProtocol: String?
 
         /// Creates an edge configuration change; fields left `nil` are not sent and stay unchanged.
         public init(
@@ -101,7 +104,8 @@ extension Node64 {
             http3: Bool? = nil,
             defaultResponse: EdgeDefaultResponse? = nil,
             defaultURL: String? = nil,
-            defaultHTML: String? = nil
+            defaultHTML: String? = nil,
+            proxyProtocol: String? = nil
         ) {
             self.bind = bind
             self.httpPort = httpPort
@@ -111,6 +115,7 @@ extension Node64 {
             self.defaultResponse = defaultResponse
             self.defaultURL = defaultURL
             self.defaultHTML = defaultHTML
+            self.proxyProtocol = proxyProtocol
         }
 
         enum CodingKeys: String, CodingKey {
@@ -122,6 +127,7 @@ extension Node64 {
             case defaultResponse = "default"
             case defaultURL = "default_url"
             case defaultHTML = "default_html"
+            case proxyProtocol = "proxy_protocol"
         }
     }
 

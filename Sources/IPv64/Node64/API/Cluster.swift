@@ -93,6 +93,38 @@ extension Node64.Cluster {
         try await client.send(Request(.put, "/group/sync", body: .json(SyncBody(module: module, item: item, enabled: enabled))))
     }
 
+    /// Chooses which user of a same-named set wins cluster-wide (see ``Node64/ClusterGroup/userConflicts``).
+    /// The other versions of that user are dropped on all nodes.
+    ///
+    /// Errors: `404` unknown version, `422` `uid` missing, `503` not available.
+    ///
+    /// - Parameter uid: Cluster ID of the user to keep.
+    ///
+    /// `POST /group/users`
+    public func resolveUserConflict(uid: String) async throws -> Node64.ClusterUserResolution {
+        try await client.send(Request(.post, "/group/users", body: .json(UIDBody(uid: uid))))
+    }
+
+    /// Chooses the ACME account cluster-wide when the nodes have different ones (see ``Node64/ClusterGroup/acmeAccounts``).
+    /// The other ACME accounts are dropped on all nodes.
+    ///
+    /// Errors: `404` unknown account, `422` `thumbprint` missing, `503` not available.
+    ///
+    /// - Parameter thumbprint: Thumbprint of the account to keep.
+    ///
+    /// `POST /group/acme`
+    public func resolveACMEConflict(thumbprint: String) async throws -> Node64.ClusterACMEResolution {
+        try await client.send(Request(.post, "/group/acme", body: .json(ThumbprintBody(thumbprint: thumbprint))))
+    }
+
+    private struct UIDBody: Encodable, Sendable {
+        let uid: String
+    }
+
+    private struct ThumbprintBody: Encodable, Sendable {
+        let thumbprint: String
+    }
+
     private struct JoinBody: Encodable, Sendable {
         let addr: String?
         let code: String?

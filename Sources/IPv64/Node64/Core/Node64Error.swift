@@ -95,5 +95,7 @@ public struct Node64APIError: Codable, Hashable, Sendable {
         let code: String?
         let key: String?
         let text: String?
+        /// Human-readable text of the Honeypot64 watch/cert endpoints (`{error, message}`).
+        let message: String?
     }
 }

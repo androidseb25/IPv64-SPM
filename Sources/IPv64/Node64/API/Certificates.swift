@@ -283,3 +283,35 @@ extension Node64.Certificates {
         }
     }
 }
+
+extension Node64.Certificates {
+    /// Own resolvers of the DNS-01 check. Empty = only the built-in ones (ipv64 name servers directly, public resolvers).
+    ///
+    /// `GET /certs/dns-check`
+    public func dnsCheck() async throws -> Node64.CertDNSCheck {
+        try await client.send(Request(.get, "/certs/dns-check"))
+    }
+
+    /// Saves the own resolvers of the DNS-01 check. The list replaces the stored one; an empty list leaves only the built-in ones.
+    ///
+    /// - Parameter resolvers: IP addresses (port 53) or `https://`, `tls://`, `quic://` URLs, at most 10.
+    ///
+    /// An invalid entry fails with 422 (`field` `resolvers`).
+    ///
+    /// `PUT /certs/dns-check`
+    public func updateDNSCheck(resolvers: [String]) async throws -> Node64.CertDNSCheck {
+        try await client.send(Request(.put, "/certs/dns-check", body: .json(DNSCheckBody(resolvers: resolvers))))
+    }
+
+    /// Tests the DNS-01 check: which ways work from here. Takes at most 30 seconds; one working way is enough.
+    /// The default request timeout is also 30 seconds, so raise `Configuration.timeoutInterval` for this call.
+    ///
+    /// `POST /certs/dns-check/run`
+    public func runDNSCheck() async throws -> Node64.CertDNSCheckResult {
+        try await client.send(Request(.post, "/certs/dns-check/run"))
+    }
+
+    private struct DNSCheckBody: Encodable, Sendable {
+        let resolvers: [String]
+    }
+}

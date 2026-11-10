@@ -71,6 +71,8 @@ public struct HoneypotReport: Codable, Hashable, Sendable {
             public static let standard: Self = "standard"
             public static let full: Self = "full"
             public static let custom: Self = "custom"
+            /// Reverse-proxy sensor.
+            public static let proxy: Self = "proxy"
         }
 
         /// Operating mode of a sensor.

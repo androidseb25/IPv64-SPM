@@ -80,3 +80,60 @@ extension Node64.Honeypot {
         try await client.send(Request(.get, "/honeypot/live", query: [QueryItem("minutes", minutes)]))
     }
 }
+
+extension Node64.Honeypot {
+    /// Early warning (own networks at ipv64).
+    public var watch: Watch { Watch(client: client) }
+
+    /// Endpoints below `/honeypot/watch`.
+    public struct Watch: Sendable { let client: Node64 }
+
+    /// Creates a certificate for decoy names under an ipv64 domain of the account (issued via ipv64 DNS-01, 202)
+    /// and selects it in the settings. With `dnsTargets` the DNS records are created at ipv64.
+    /// The names become public in the CT logs. Fails with 409, 422 or 503.
+    ///
+    /// `POST /honeypot/cert`
+    public func certificate(_ input: Node64.Honeypot64CertificateInput) async throws -> Node64.Honeypot64CertificateResult {
+        try await client.send(Request(.post, "/honeypot/cert", body: .json(input)))
+    }
+}
+
+extension Node64.Honeypot.Watch {
+    /// Watched networks and DynDNS addresses (live from ipv64 with the central API key), limits, and the local retrieval state and latest hits.
+    ///
+    /// `GET /honeypot/watch`
+    public func list() async throws -> Node64.Honeypot64Watch {
+        try await client.send(Request(.get, "/honeypot/watch"))
+    }
+
+    /// Registers a public network (or a single IP, becoming /32 or /128) at ipv64.
+    /// Errors of ipv64 come through with status and code (e.g. 403, 409, 422).
+    ///
+    /// - Parameters:
+    ///   - cidr: Network or IP.
+    ///   - label: Label, at most 64 characters.
+    ///
+    /// `POST /honeypot/watch`
+    public func add(cidr: String, label: String? = nil) async throws -> Node64.Honeypot64WatchNetwork {
+        try await client.send(Request(.post, "/honeypot/watch", body: .json(AddBody(cidr: cidr, label: label))))
+    }
+
+    /// Removes a network at ipv64.
+    ///
+    /// `DELETE /honeypot/watch/{id}`
+    public func remove(_ id: Int) async throws {
+        try await client.sendWithoutContent(Request(.delete, "/honeypot/watch/\(id)"))
+    }
+
+    /// Fetches the hits of the early warning now.
+    ///
+    /// `POST /honeypot/watch/check`
+    public func check() async throws -> Node64.Honeypot64WatchCheckResult {
+        try await client.send(Request(.post, "/honeypot/watch/check"))
+    }
+
+    private struct AddBody: Encodable, Sendable {
+        let cidr: String
+        let label: String?
+    }
+}

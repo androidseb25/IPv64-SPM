@@ -94,6 +94,19 @@ extension Node64.DNS64 {
             try await client.sendWithoutContent(Request(.post, "/dns64/groups/\(id)/hold", body: .json(body)))
         }
 
+        /// Takes a device out of its group, like "no group" in the web interface. Removes the memberships
+        /// with this MAC and/or IP. Answers `400` if neither is given.
+        ///
+        /// `POST /dns64/groups/unassign`
+        public func unassign(mac: String? = nil, ip: String? = nil) async throws {
+            try await client.sendWithoutContent(Request(.post, "/dns64/groups/unassign", body: .json(UnassignBody(mac: mac, ip: ip))))
+        }
+
+        private struct UnassignBody: Encodable, Sendable {
+            let mac: String?
+            let ip: String?
+        }
+
         private struct NameBody: Encodable, Sendable {
             let name: String
         }
@@ -138,6 +151,7 @@ extension Node64.DNS64 {
             ///   - kind: Kind of `value`.
             ///   - value: MAC address, IP address or network (CIDR).
             ///   - label: Display name.
+            ///   - tags: Tags of the device (at most 10, each at most 24 characters).
             /// - Returns: The new membership; delete it with ``delete(_:)``.
             ///
             /// `POST /dns64/groups/{id}/members`
@@ -145,9 +159,10 @@ extension Node64.DNS64 {
                 group: Int,
                 kind: Node64.DNS64GroupMemberKind,
                 value: String,
-                label: String? = nil
+                label: String? = nil,
+                tags: [String]? = nil
             ) async throws -> Node64.DNS64GroupMember {
-                let body = Body(kind: kind, value: value, label: label)
+                let body = Body(kind: kind, value: value, label: label, tags: tags)
                 return try await client.send(Request(.post, "/dns64/groups/\(group)/members", body: .json(body)))
             }
 
@@ -164,6 +179,27 @@ extension Node64.DNS64 {
                 let kind: Node64.DNS64GroupMemberKind
                 let value: String
                 let label: String?
+                let tags: [String]?
+            }
+
+            /// Changes label and tags of a member. Fields left `nil` stay as they are; kind and value cannot
+            /// change (delete and create the member instead). Answers `422` for too many or too long tags.
+            ///
+            /// - Parameters:
+            ///   - id: ID of the membership.
+            ///   - label: New display name.
+            ///   - tags: New tags; replaces the existing ones (at most 10, each at most 24 characters).
+            ///
+            /// `PATCH /dns64/groups/members/{id}`
+            public func update(_ id: Int, label: String? = nil, tags: [String]? = nil) async throws -> Node64.DNS64GroupMember {
+                try await client.send(Request(
+                    .patch, "/dns64/groups/members/\(id)", body: .json(UpdateBody(label: label, tags: tags))
+                ))
+            }
+
+            private struct UpdateBody: Encodable, Sendable {
+                let label: String?
+                let tags: [String]?
             }
         }
 

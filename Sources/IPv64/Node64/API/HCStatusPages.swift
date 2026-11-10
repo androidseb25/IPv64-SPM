@@ -136,3 +136,18 @@ extension Node64.HC.StatusPages.Notices {
         try await client.sendWithoutContent(Request(.delete, "/status-pages/\(page)/notices/\(id)"))
     }
 }
+
+extension Node64.HC.StatusPages {
+    /// Adds entries to a group of a status page: checks by token, and Proxmox nodes, guests or Docker containers
+    /// by resource. A missing check of a resource is created as with "as check". Existing entries stay (not duplicated).
+    /// Fails with 422 on invalid input.
+    ///
+    /// - Parameters:
+    ///   - id: ID of the status page.
+    ///   - input: The entries to add.
+    ///
+    /// `POST /status-pages/{id}/items`
+    public func addItems(_ id: Int, _ input: Node64.StatusPageItemsInput) async throws -> Node64.StatusPage {
+        try await client.send(Request(.post, "/status-pages/\(id)/items", body: .json(input)))
+    }
+}

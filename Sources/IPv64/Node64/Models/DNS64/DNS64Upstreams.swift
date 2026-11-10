@@ -15,6 +15,8 @@ extension Node64 {
         public let error: String?
         /// Consecutive failures.
         public let failures: Int?
+        /// Whether the list is active (only set for allow lists, see ``Node64/DNS64/AllowLists/list()``).
+        public let enabled: Bool?
 
         /// Identifier for `Identifiable` (URL, else name).
         public var id: String { url ?? name ?? "" }
@@ -46,6 +48,8 @@ extension Node64 {
         public let lastErrorAt: Date?
         /// `fastest` mode: currently among the servers asked first.
         public let active: Bool?
+        /// The server is skipped until this time after repeated failures.
+        public let pausedUntil: Date?
 
         /// Identifier for `Identifiable` (URL, else name).
         public var id: String { url ?? name ?? "" }
@@ -63,6 +67,29 @@ extension Node64 {
         public let localSource: String?
         /// Number of servers.
         public let count: Int?
+        /// State of the mDNS bridge.
+        public let mdns: DNS64MDNSStatus?
+        /// Domain suffixes learned from the router (only with the mDNS bridge).
+        public let localDomains: [String]?
+    }
+
+    /// State of the mDNS bridge (inline object of `GET /dns64/upstreams`).
+    public struct DNS64MDNSStatus: Codable, Hashable, Sendable {
+        /// Whether the bridge is on.
+        public let on: Bool?
+        /// Multicast queries since start.
+        public let queries: Int?
+        /// Queries that were answered.
+        public let answered: Int?
+        /// Devices found at the last check; `-1` means not checked yet.
+        public let responders: Int?
+        /// Time of the last check.
+        public let probedAt: Date?
+
+        enum CodingKeys: String, CodingKey {
+            case on, queries, answered, responders
+            case probedAt = "probed_at"
+        }
     }
 
     /// Cache counters since start. Schema `DNS64Cache`.

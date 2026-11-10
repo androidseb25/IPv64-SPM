@@ -18,6 +18,26 @@ extension Node64.HC.Docker {
         try await client.send(Request(.get, "/healthchecks/docker/containers"))
     }
 
+    /// Sets up the local Docker socket (`NODE64_DOCKER_HOST` or `unix:///var/run/docker.sock`) as a Docker host,
+    /// or switches it on again, but only if the socket answers (422 otherwise). Already set up: returned unchanged.
+    ///
+    /// `POST /healthchecks/docker/enable`
+    public func enable() async throws -> Node64.PVESystem {
+        try await client.send(Request(.post, "/healthchecks/docker/enable"))
+    }
+
+    /// Tests a Docker host: connection, version, containers, `/info`. Stores nothing (`generateKey` fails with 422).
+    ///
+    /// Without `pinSHA256` an `ssh://` or unconfirmed `https://` host only yields the fingerprint
+    /// (`needConfirm`); test again with it as `pinSHA256`. With `systemID` the stored credentials apply, but only
+    /// for the same address and pin (else 422 `pve.err.secret_reenter`).
+    ///
+    /// `POST /healthchecks/docker/probe`
+    public func probe(_ input: Node64.PVESystemInput, systemID: Int? = nil) async throws -> Node64.DockerProbe {
+        let body = Node64.HC.Proxmox.ProbeBody(input: input, systemID: systemID)
+        return try await client.send(Request(.post, "/healthchecks/docker/probe", body: .json(body)))
+    }
+
     /// Monitored Docker hosts (`/healthchecks/docker/systems`).
     public var systems: Systems { Systems(client: client) }
 
@@ -81,6 +101,14 @@ extension Node64.HC.Docker.Systems {
     /// `DELETE /healthchecks/docker/systems/{id}`
     public func delete(_ id: Int) async throws {
         try await client.sendWithoutContent(Request(.delete, "/healthchecks/docker/systems/\(id)"))
+    }
+
+    /// Adds every container of the last query (without label `node64.nomonitor`) that is not yet a check
+    /// as a check of type `docker`. A second call adds nothing twice.
+    ///
+    /// `POST /healthchecks/docker/systems/{id}/ascheck-all`
+    public func asCheckAll(_ id: Int, scope: Node64.PVEAsCheckScope? = nil) async throws -> Node64.PVEAsCheckAllResult {
+        try await client.send(Request(.post, "/healthchecks/docker/systems/\(id)/ascheck-all", query: [QueryItem("scope", scope)]))
     }
 
     /// Returns the Docker host with the containers from the last query.

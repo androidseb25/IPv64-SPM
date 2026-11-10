@@ -72,3 +72,54 @@ extension Node64.Proxy64.Online {
         let healthcheck: Bool?
     }
 }
+
+extension Node64.Proxy64.Online {
+    /// Pauses or resumes CDN64 for the names of a host (DNS goes directly to the server, settings stay).
+    ///
+    /// Fails with 404 if unknown, 409 if no ipv64 account is linked or the name is not at CDN64, 502 if ipv64 is unreachable.
+    ///
+    /// `POST /cdn64/hosts/{id}/online/pause`
+    public func pause(host: Int, paused: Bool) async throws {
+        try await client.sendWithoutContent(Request(.post, "/cdn64/hosts/\(host)/online/pause", body: .json(PauseBody(paused: paused))))
+    }
+
+    /// Pauses or resumes a name this node does not manage (mode 3 of ipv64.net, other nodes).
+    ///
+    /// - Parameters:
+    ///   - remoteID: ID of the name at ipv64 (``Node64/CDNOnlineName/remoteID`` from ``status()``).
+    ///   - paused: `true` pauses, `false` resumes.
+    ///
+    /// Fails with 400 if invalid, 404 for an unknown name, 502 if ipv64 is unreachable.
+    ///
+    /// `POST /cdn64/online/names/{rid}/pause`
+    public func pauseName(remoteID: Int, paused: Bool) async throws {
+        try await client.sendWithoutContent(Request(.post, "/cdn64/online/names/\(remoteID)/pause", body: .json(PauseBody(paused: paused))))
+    }
+
+    /// CDN64 servers of the own tunnel (portal without a server per name).
+    ///
+    /// Fails with 409 if no ipv64 account is linked or the name is not at CDN64 (`not_online`), or the portal uses
+    /// a server per name (`not_configured`); 403 if the class may not choose; 502 if ipv64 is unreachable.
+    ///
+    /// `GET /cdn64/online/servers`
+    public func servers() async throws -> Node64.Proxy64Servers {
+        try await client.send(Request(.get, "/cdn64/online/servers"))
+    }
+
+    /// Sets the CDN64 servers of the own tunnel.
+    ///
+    /// - Parameters:
+    ///   - count: Servers; `0` = all, also future ones (only classes without an upper limit).
+    ///   - sessions: Connections per server; `nil` = unchanged.
+    ///
+    /// Errors as for ``servers()``; 422 if `count` is invalid.
+    ///
+    /// `PUT /cdn64/online/servers`
+    public func updateServers(count: Int, sessions: Int? = nil) async throws -> Node64.Proxy64Servers {
+        try await client.send(Request(.put, "/cdn64/online/servers", body: .json(Node64.Proxy64.ServersBody(count: count, sessions: sessions))))
+    }
+
+    private struct PauseBody: Encodable, Sendable {
+        let paused: Bool
+    }
+}

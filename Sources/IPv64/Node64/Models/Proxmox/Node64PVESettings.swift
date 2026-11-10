@@ -116,6 +116,8 @@ extension Node64 {
         public var muted: Bool?
         /// Create (`true`) or delete (`false`) the healthcheck of this level.
         public var asCheck: Bool?
+        /// Name of the new check; only with `asCheck: true` (empty = "System – Eintrag"); an existing check keeps its name.
+        public var name: String?
         /// Expected state; `nil` leaves it, ``PVEExpectRunning/automatic`` sends `null`.
         public var expectRunning: PVEExpectRunning?
         /// Rules of this level.
@@ -124,9 +126,11 @@ extension Node64 {
         public init(
             muted: Bool? = nil,
             asCheck: Bool? = nil,
+            name: String? = nil,
             expectRunning: PVEExpectRunning? = nil,
             rules: PVERuleSet? = nil
         ) {
+            self.name = name
             self.muted = muted
             self.asCheck = asCheck
             self.expectRunning = expectRunning
@@ -136,6 +140,7 @@ extension Node64 {
         enum CodingKeys: String, CodingKey {
             case muted
             case asCheck = "as_check"
+            case name
             case expectRunning = "expect_running"
             case rules
         }
@@ -144,6 +149,7 @@ extension Node64 {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encodeIfPresent(muted, forKey: .muted)
             try container.encodeIfPresent(asCheck, forKey: .asCheck)
+            try container.encodeIfPresent(name, forKey: .name)
             switch expectRunning {
             case .automatic: try container.encodeNil(forKey: .expectRunning)
             case .running: try container.encode(true, forKey: .expectRunning)

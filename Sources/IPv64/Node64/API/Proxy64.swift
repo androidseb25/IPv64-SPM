@@ -139,3 +139,80 @@ extension Node64.Proxy64 {
         return try await client.send(Request(.put, "/cdn64/settings", body: .json(body)))
     }
 }
+
+extension Node64.Proxy64 {
+    /// State of the Docker sync: connection, containers with labels and settings.
+    ///
+    /// `GET /cdn64/docker`
+    public func docker() async throws -> Node64.Proxy64Docker {
+        try await client.send(Request(.get, "/cdn64/docker"))
+    }
+
+    /// Changes the Docker sync. Fields you leave `nil` stay unchanged.
+    ///
+    /// - Parameters:
+    ///   - enabled: Create proxy hosts from Docker labels (`node64.proxy.*`).
+    ///   - traefik: Also read `traefik.*` labels.
+    ///   - dockerHost: Docker API of this node (`unix://` or `tcp://`, no `ssh://`); `""` = default.
+    ///   - certificate: Certificate for new Docker hosts: `""`, `auto`, `ipv64`, `http` or `dns:<account>`.
+    ///   - acceptTOS: Accept the Let's Encrypt terms; needed with `certificate` while the account has not accepted them.
+    ///
+    /// Fails with 422 for an invalid `docker_host` or `certificate`, or when the terms are not accepted (field `docker_cert`).
+    /// The response is the state like ``docker()``.
+    ///
+    /// `PUT /cdn64/docker`
+    public func updateDocker(
+        enabled: Bool? = nil,
+        traefik: Bool? = nil,
+        dockerHost: String? = nil,
+        certificate: String? = nil,
+        acceptTOS: Bool? = nil
+    ) async throws -> Node64.Proxy64Docker {
+        let body = DockerBody(enabled: enabled, traefik: traefik, dockerHost: dockerHost, certificate: certificate, acceptTOS: acceptTOS)
+        return try await client.send(Request(.put, "/cdn64/docker", body: .json(body)))
+    }
+
+    /// CDN64 statistics: what the CDN64 servers blocked for the names of the account, per name with WAF/JA4.
+    ///
+    /// Fails with 409 if no ipv64 account is linked and 502 if ipv64 is unreachable.
+    ///
+    /// - Parameter days: `1` (today), `7` (default) or `30`.
+    ///
+    /// `GET /cdn64/protection`
+    public func protection(days: Int? = nil) async throws -> Node64.Proxy64ProtectionStats {
+        try await client.send(Request(.get, "/cdn64/protection", query: [QueryItem("days", days)]))
+    }
+
+    /// Lifts an automatic block and adds the address to the allow list.
+    ///
+    /// Fails with 404 if there is no automatic block for the address and 422 for an invalid `from`.
+    ///
+    /// - Parameters:
+    ///   - ip: IP address or /64.
+    ///   - from: Which block to lift; `nil` or ``Node64/Proxy64ReleaseSource/both`` = both.
+    ///
+    /// `POST /cdn64/release`
+    public func release(ip: String, from: Node64.Proxy64ReleaseSource? = nil) async throws -> Node64.CDNBlocklists {
+        try await client.send(Request(.post, "/cdn64/release", body: .json(ReleaseBody(ip: ip, from: from))))
+    }
+
+    private struct DockerBody: Encodable, Sendable {
+        let enabled: Bool?
+        let traefik: Bool?
+        let dockerHost: String?
+        let certificate: String?
+        let acceptTOS: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case enabled, traefik
+            case dockerHost = "docker_host"
+            case certificate
+            case acceptTOS = "accept_tos"
+        }
+    }
+
+    private struct ReleaseBody: Encodable, Sendable {
+        let ip: String
+        let from: Node64.Proxy64ReleaseSource?
+    }
+}

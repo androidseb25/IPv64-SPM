@@ -93,7 +93,7 @@ extension Node64 {
     private func error(for response: HTTPURLResponse, body: Data) -> Node64Error {
         let retryAfter = response.value(forHTTPHeaderField: "Retry-After").flatMap { Int($0) }
         guard let document = try? JSONDecoder().decode(Node64APIError.Body.self, from: body),
-              document.error != nil || document.code != nil || document.text != nil else {
+              document.error != nil || document.code != nil || document.text != nil || document.message != nil else {
             if response.statusCode == 429 {
                 return .api(Node64APIError(status: 429, retryAfter: retryAfter))
             }
@@ -106,7 +106,7 @@ extension Node64 {
             fields: document.fields,
             code: document.code,
             key: document.key,
-            text: document.text,
+            text: document.text ?? document.message,
             retryAfter: retryAfter
         ))
     }

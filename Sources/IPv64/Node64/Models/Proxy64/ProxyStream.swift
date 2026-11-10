@@ -57,6 +57,10 @@ extension Node64 {
         public let geoMode: CDNGeoMode?
         /// ISO country codes, at most 60.
         public let geoCountries: [String]?
+        /// Bandwidth to the visitor in Mbit/s for all connections together; `0` = unlimited.
+        public let bwDownMbit: Int?
+        /// Bandwidth from the visitor in Mbit/s; `0` = unlimited.
+        public let bwUpMbit: Int?
 
         enum CodingKeys: String, CodingKey {
             case id, name, enabled
@@ -73,6 +77,8 @@ extension Node64 {
             case certName = "cert_name"
             case geoMode = "geo_mode"
             case geoCountries = "geo_countries"
+            case bwDownMbit = "bw_down_mbit"
+            case bwUpMbit = "bw_up_mbit"
         }
     }
 
@@ -98,6 +104,12 @@ extension Node64 {
         public var geoMode: CDNGeoMode?
         /// ISO country codes, at most 60.
         public var geoCountries: [String]?
+        /// Bandwidth to the visitor in Mbit/s for all connections together, 0-100000; `0` = unlimited.
+        public var bwDownMbit: Int?
+        /// Bandwidth from the visitor in Mbit/s, 0-100000; `0` = unlimited.
+        public var bwUpMbit: Int?
+        /// Port mapper: expose the port via CDN64 under this name (mode 3); `""` = local only.
+        public var onlineName: String?
 
         /// Creates a stream input; pass only the fields you want to set.
         public init(
@@ -110,7 +122,10 @@ extension Node64 {
             targetPort: Int? = nil,
             tlsCertID: Int? = nil,
             geoMode: CDNGeoMode? = nil,
-            geoCountries: [String]? = nil
+            geoCountries: [String]? = nil,
+            bwDownMbit: Int? = nil,
+            bwUpMbit: Int? = nil,
+            onlineName: String? = nil
         ) {
             self.name = name
             self.enabled = enabled
@@ -122,6 +137,9 @@ extension Node64 {
             self.tlsCertID = tlsCertID
             self.geoMode = geoMode
             self.geoCountries = geoCountries
+            self.bwDownMbit = bwDownMbit
+            self.bwUpMbit = bwUpMbit
+            self.onlineName = onlineName
         }
 
         enum CodingKeys: String, CodingKey {
@@ -133,6 +151,9 @@ extension Node64 {
             case tlsCertID = "tls_cert_id"
             case geoMode = "geo_mode"
             case geoCountries = "geo_countries"
+            case bwDownMbit = "bw_down_mbit"
+            case bwUpMbit = "bw_up_mbit"
+            case onlineName = "online_name"
         }
     }
 }

@@ -57,6 +57,7 @@ extension Node64.Proxy64.Blocklists {
     /// - Parameters:
     ///   - enabled: IDs of the lists to switch on.
     ///   - allow: Exceptions: IP addresses or networks.
+    ///   - deny: Own deny list: IP addresses or networks rejected for all hosts and streams (the allow list wins).
     ///   - token: List token from the ipv64 account (32 characters A-Z, a-z, 0-9) for the live edition
     ///     of the honeypot lists. `""` deletes it, `nil` leaves it unchanged. If only `token` is sent,
     ///     enabled lists and exceptions stay unchanged. The token is stored encrypted and never returned.
@@ -65,9 +66,10 @@ extension Node64.Proxy64.Blocklists {
     public func update(
         enabled: [String]? = nil,
         allow: [String]? = nil,
+        deny: [String]? = nil,
         token: String? = nil
     ) async throws -> Node64.CDNBlocklists {
-        let body = UpdateBody(enabled: enabled, allow: allow, token: token)
+        let body = UpdateBody(enabled: enabled, allow: allow, deny: deny, token: token)
         return try await client.send(Request(.put, "/cdn64/blocklists", body: .json(body)))
     }
 
@@ -81,6 +83,7 @@ extension Node64.Proxy64.Blocklists {
     private struct UpdateBody: Encodable, Sendable {
         let enabled: [String]?
         let allow: [String]?
+        let deny: [String]?
         let token: String?
     }
 }
