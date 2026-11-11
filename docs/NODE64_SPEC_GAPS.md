@@ -1,6 +1,6 @@
 # Node64 – Lücken in der OpenAPI-Spec
 
-Stand: Spec „Node64 – lokale API“ 1.2.0 (361 Operationen), zuletzt abgeglichen am 09.11.2026. Die Spec hat seit dem Bau des Clients rund 70 Endpunkte dazubekommen, ohne die Versionsnummer zu ändern.
+Stand: Spec „Node64 – lokale API“ 1.2.0 (352 Operationen), zuletzt abgeglichen am 11.11.2026. Die Spec ändert ihren Inhalt, ohne die Versionsnummer zu ändern: seit dem Bau des Clients kamen rund 85 Endpunkte dazu, 26 (Docker- und Proxmox-Monitoring) fielen weg.
 Jede Lücke hier ist im Client mit einer Annahme oder einem untypisierten Rückgabewert gelöst. Wird die Spec ergänzt, lässt sich der Client typisieren.
 
 ## 1. 2xx-Antworten ohne Schema
@@ -20,6 +20,7 @@ Der Client liefert hier rohes `JSONValue`:
 | `GET /acme-cas/presets` | `certificates.acmeAuthorities.presets` (`[JSONValue]`) |
 | `GET /openapi.json` | `node.openAPI` (erwartbar) |
 | `GET /update`, `POST /update/check`, `PUT /update/settings` | `node.update.get`, `.check`, `.updateSettings` |
+| `GET /dns64/dhcp`, `PUT /dns64/dhcp/mode`, `/role`, `/ipv6` | `dns64.dhcp.status`, `.setMode`, `.setRole`, `.updateIPv6` (der Zustand von `GET /dns64/dhcp` steht nur in der Beschreibung) |
 
 **Vorschlag:** Bei `POST/PUT /checks` und `/maintenance` das angelegte bzw. geänderte Objekt als `Check` bzw. `Maintenance` dokumentieren.
 
@@ -39,7 +40,7 @@ Diese Antworten hat der Client aus dem Beschreibungstext modelliert. Alle Felder
 - `PUT /edge/ui`: Antwort dokumentiert nur `name` und `public`.
 - `GET /dyndns/status`: das Objekt `cluster` (`leader`, `this_node`, `preferred_node`) steht nur im Text.
 - `GET /group`: `user_conflicts` und `acme_accounts` fehlen im Schema und werden nur bei `POST /group/users` und `/group/acme` erwähnt. Der Client liefert sie als `JSONValue`.
-- Freie Objekte ohne Felder, im Client `JSONValue`: `Sonar64Status.me`, `PVESystem.pbs`, `Honeypot64Watch.state`, `POST /honeypot/watch/check` → `state`, die Einträge von `GET /cdn64/docker` → `containers` und `GET /cdn64/protection` → `daily`.
+- Freie Objekte ohne Felder, im Client `JSONValue`: `Sonar64Status.me`, `Honeypot64Watch.state`, `POST /honeypot/watch/check` → `state`, die Einträge von `GET /cdn64/docker` → `containers` und `GET /cdn64/protection` → `daily`.
 - Dateien ohne Content-Type: `GET /dns64/records/export`, `GET /cas/{id}/file`.
 
 ## 3. Zeitstempel ohne `format: date-time`

@@ -4,7 +4,7 @@ Swift-Package für die [IPv64.net API v2](https://ipv64.net/api_v2_docs): DynDNS
 
 Das Package deckt alle 201 Endpunkte der OpenAPI-Spezifikation (`https://ipv64.net/api/v2/openapi.json`) ab. Wo die Spec lückenhaft ist und wie der Client damit umgeht, steht in [`docs/IPV64_SPEC_GAPS.md`](docs/IPV64_SPEC_GAPS.md).
 
-Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-Node im eigenen Netz, mit allen 361 Endpunkten (siehe [Node64](#node64)).
+Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-Node im eigenen Netz, mit allen 352 Endpunkten (siehe [Node64](#node64)).
 
 - Swift 6 Language Mode mit strikter Concurrency-Prüfung
 - `async`/`await`, der Client ist `Sendable` und kann zwischen Tasks und Actors geteilt werden
@@ -181,9 +181,9 @@ let backup = try await node64.node.downloadDatabase()   // Data, enthält Geheim
 | Bereich | Inhalt |
 |---|---|
 | `node` | Status, Module, Einstellungen, API-Keys, Logs, Backup/Restore/Export/Import, Benutzer, MCP, Selbst-Update |
-| `hc` | Checks, Events, Wartung, Push, Online-Checks, Kanäle (lokal und bei ipv64), Statusseiten, Docker, Proxmox |
+| `hc` | Checks, Events, Wartung, Push, Online-Checks, Kanäle (lokal und bei ipv64), Statusseiten |
 | `dyndns` | DynDNS-Updater und Ziele |
-| `dns64` | Resolver-Statistik, Block- und Freigabelisten, eigene Sperrliste, Upstreams, Cache, Records, Gruppen, Forwards, Rewrites, Zonen (TSIG) |
+| `dns64` | Resolver-Statistik, DHCP-Server, Block- und Freigabelisten, eigene Sperrliste, Upstreams, Cache, Records, Gruppen, Forwards, Rewrites, Zonen (TSIG) |
 | `proxy64` | Reverse Proxy: Hosts, Streams, Zugriffslisten, Schutz, Docker-Abgleich, ipv64-Online-Anbindung und CDN64-Server |
 | `ports`, `certificates` | Ports, Eingang (Edge), TLS-Zertifikate, CAs, ACME, DNS-01-Prüfung |
 | `link`, `cluster`, `honeypot` | Verknüpfung mit ipv64.net (auch per Code), lokaler Node-Verbund, Honeypot64 inkl. Frühwarnung |

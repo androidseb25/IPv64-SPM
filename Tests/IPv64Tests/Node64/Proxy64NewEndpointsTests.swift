@@ -183,3 +183,25 @@ struct Node64Proxy64NewEndpointsTests {
         #expect(run.lastRequest?.nodeRelativePath == "/certs/dns-check/run")
     }
 }
+
+@Suite("Node64 PROXY protocol and target HTTP fields")
+struct Node64ProxyProtocolFieldTests {
+    @Test("Host advanced and location fields round-trip")
+    func hostFields() throws {
+        let json = Data(#"{"advanced":{"target_http":"h2c","proxy_protocol":"v2"},"locations":[{"path":"/a","denied_redirect":"/login","advanced":{"target_http":"h1"}}]}"#.utf8)
+        struct Wrapper: Codable, Equatable { var advanced: Node64.CDNAdvanced; var locations: [Node64.CDNLocation] }
+        let value = try JSONDecoder().decode(Wrapper.self, from: json)
+        #expect(value.advanced.targetHTTP == .h2c && value.advanced.proxyProtocol == .v2)
+        #expect(value.locations[0].deniedRedirect == "/login" && value.locations[0].advanced?.targetHTTP == .h1)
+        let again = try JSONDecoder().decode(Wrapper.self, from: JSONEncoder().encode(value))
+        #expect(again == value)
+    }
+
+    @Test("Stream proxy_protocol decodes and encodes")
+    func streamField() throws {
+        let stream = try JSONDecoder().decode(Node64.ProxyStream.self, from: Data(#"{"id":1,"proxy_protocol":"v1"}"#.utf8))
+        #expect(stream.proxyProtocol == .v1)
+        let body = try JSONEncoder().encode(Node64.ProxyStreamInput(proxyProtocol: .off))
+        #expect(String(decoding: body, as: UTF8.self) == #"{"proxy_protocol":""}"#)
+    }
+}

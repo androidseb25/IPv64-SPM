@@ -162,7 +162,7 @@ extension Node64 {
         public var repeatMinutes: Int?
         /// Free-form group name (at most 100 characters).
         public var group: String?
-        /// IDs of the measuring nodes (with `local`/`both`, only with an ipv64 link).
+        /// IDs of the measuring nodes (with `local`/`both`, only with an ipv64 link). Empty = the owner node; no effect with `online`.
         public var nodes: [String]?
 
         /// Creates a check definition.

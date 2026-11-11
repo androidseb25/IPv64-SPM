@@ -965,7 +965,7 @@ Request body for creating or updating a check. When updating, only the fields pr
 - `critical: Bool?` – Critical: ignores quiet hours.
 - `execution: HC2Execution?` – Where the check runs: `online` (ipv64), `local` (node), `both` (hybrid).
 - `nodeID: String?` – Owner node for `local`/`both`; given alone it means a single measuring node.
-- `nodes: [String]?` – Measuring node IDs for `local`/`both`; several allowed, Docker/Push exactly one.
+- `nodes: [String]?` – Measuring node IDs for `local`/`both`; several allowed.
 - `locations: [HC2Location]?` – Locations for `online`/`both` (count depends on the account class).
 - `policy: HC2Policy?` – Overall rule with several measuring points.
 - `notifyDegraded: Bool?` – Also notify when partially degraded.
@@ -1053,7 +1053,6 @@ Type of a check.
 - `.port` = `"port"`
 - `.cert` = `"cert"`
 - `.push` = `"push"`
-- `.docker` = `"docker"`
 - `.whois` = `"whois"`
 
 ## `HC2Command` (struct)
@@ -1421,7 +1420,7 @@ Time range of check statistics.
 A group of checks on a Healthchecks 2.0 status page. Used in responses and in `HC2StatusPageInput/groups`.
 
 - `name: String?` – Heading of the group; empty means no heading.
-- `tokens: [String]` – Tokens of the checks in display order (no Docker/Proxmox checks).
+- `tokens: [String]` – Tokens of the checks in display order.
 
 ## `HC2StatusNotice` (struct)
 

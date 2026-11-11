@@ -16,7 +16,6 @@ extension Node64 {
         public static let cert: Self = "cert"
         public static let whois: Self = "whois"
         public static let push: Self = "push"
-        public static let docker: Self = "docker"
     }
 
     /// Where a check is measured (`Check.execution`).

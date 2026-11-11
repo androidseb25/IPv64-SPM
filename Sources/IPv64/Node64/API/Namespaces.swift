@@ -6,7 +6,7 @@ import Foundation
 extension Node64 {
     /// Node itself: status, modules, settings, API keys, backups, logs.
     public var node: Node { Node(client: self) }
-    /// Healthchecks: checks, events, maintenance, push, channels, status pages, Docker, Proxmox.
+    /// Healthchecks: checks, events, maintenance, push, channels, status pages.
     public var hc: HC { HC(client: self) }
     /// DynDNS updater of the node.
     public var dyndns: DynDNS { DynDNS(client: self) }

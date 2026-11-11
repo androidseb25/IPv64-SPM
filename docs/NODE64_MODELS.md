@@ -169,6 +169,8 @@ Advanced settings of a proxy host. Schema `CDNAdvanced`.
 - `maintenanceStyle: CDNMaintenanceStyle?` – Maintenance page style, default `matrix`.
 - `onlyLocations: Bool?` – Proxy hosts only: answer only the locations, all other paths 404 (needs at least one location).
 - `targetPath: String?` – Proxy hosts only: path put before every request (`/recipes`: `/soup` becomes `/recipes/soup` at the target).
+- `targetHTTP: ProxyTargetHTTP?` – Proxy hosts only: HTTP version towards the target; `""`/`auto` = automatic, `h1` = HTTP/1.1 only, `h2c` = HTTP/2 without TLS (gRPC) or HTTP/2 only for https targets. WebSocket upgrades always use HTTP/1.1; unknown values are rejected (400).
+- `proxyProtocol: ProxyProtocolVersion?` – Kind `passthrough` only: PROXY protocol header to the target (sent before the ClientHello, also via CDN64); `""` = off. Only enable if the target expects it. Dropped for other kinds, unknown values are rejected (422).
 
 ## `Node64.CDNBlocklist` (struct)
 
@@ -358,6 +360,7 @@ A path-specific target of a proxy host. Schema `CDNLocation`.
 - `body: String?`
 - `contentType: String?`
 - `advanced: CDNLocationAdvanced?` – Own values of the location (action `""` only); unset values come from the host.
+- `deniedRedirect: String?` – On denied access (access list answers 403): 302 redirect here instead of the error page; relative path (`/...`) or http(s) URL, `""` = error page. Not for lists that require a login (401).
 
 ## `Node64.CDNLocationAction` (open enum)
 
@@ -378,6 +381,7 @@ Own advanced values of a location (`advanced` of `CDNLocation`); unset values co
 - `requestRemove: [String]?` – Request headers to remove.
 - `responseHeaders: [CDNHeader]?` – Headers added to the response.
 - `responseRemove: [String]?` – Response headers to remove.
+- `targetHTTP: ProxyTargetHTTP?` – HTTP version towards the target of this location; `""` = like the host.
 
 ## `Node64.CDNLocationBuffering` (open enum)
 
@@ -960,7 +964,7 @@ Writable fields of a check, the body of create and update calls.
 - `channels: [Int]?` – Notification channel IDs; empty means the default channels.
 - `repeatMinutes: Int?` – Reminder interval in minutes (0 to 1440).
 - `group: String?` – Free-form group name (at most 100 characters).
-- `nodes: [String]?` – IDs of the measuring nodes (with `local`/`both`, only with an ipv64 link).
+- `nodes: [String]?` – IDs of the measuring nodes (with `local`/`both`, only with an ipv64 link). Empty = the owner node; no effect with `online`.
 
 ## `Node64.CheckIPMode` (open enum)
 
@@ -1118,7 +1122,6 @@ Type of a check (`Check.type`).
 - `.cert` = `"cert"`
 - `.whois` = `"whois"`
 - `.push` = `"push"`
-- `.docker` = `"docker"`
 
 ## `Node64.ClusterACMEResolution` (struct)
 
@@ -1369,6 +1372,163 @@ Device name of a zone with its current addresses (result of `Node64/DNS64/Device
 
 - `name: String?` – Fully qualified name, e.g. `tablet-lea.home.lan`.
 - `ips: [String]?` – Current addresses.
+
+## `Node64.DNS64DHCPIPv6Config` (struct)
+
+Settings of the IPv6 DNS announcement (Router Advertisement).
+
+- `enabled: Bool?` – Whether the announcement is on.
+- `interfaces: [String]?` – Interfaces to announce on (at most 8).
+- `domain: String?` – Search domain (DNSSL); empty means none.
+
+## `Node64.DNS64DHCPIPv6ErrorKind` (open enum)
+
+Kind of error of an IPv6 Router Advertisement sender.
+
+- `.noInterface` = `"no_iface"`
+- `.noAddress` = `"no_addr"`
+- `.send` = `"send"`
+
+## `Node64.DNS64DHCPIPv6Input` (struct)
+
+Writable fields of `DNS64DHCPIPv6Config`.
+
+- `enabled: Bool?` – Whether the announcement is on.
+- `interfaces: [String]?` – Interfaces to announce on (at most 8).
+- `domain: String?` – Search domain (DNSSL); empty means none.
+
+## `Node64.DNS64DHCPIPv6InterfaceStatus` (struct)
+
+Sender state of one interface of the IPv6 DNS announcement.
+
+- `interface: String?` – Interface name.
+- `dns: [String]?` – Announced DNS server addresses.
+- `lastSent: Date?` – Time of the last advertisement.
+- `error: String?` – Error text.
+- `errorKind: DNS64DHCPIPv6ErrorKind?` – Kind of error.
+
+## `Node64.DNS64DHCPIPv6Prefix` (struct)
+
+A prefix announced by another router.
+
+- `prefix: String?` – Prefix.
+- `slaac: Bool?` – Whether hosts may build addresses by SLAAC.
+- `onLink: Bool?` – Whether the prefix is on-link.
+- `validLifetime: Int?` – Valid lifetime in seconds.
+
+## `Node64.DNS64DHCPIPv6Probe` (struct)
+
+Result of `Node64/DNS64/DHCP-swift.struct/probeIPv6()`.
+
+- `routers: [DNS64DHCPIPv6Router]?` – Routers that answered.
+- `error: String?` – Error text.
+
+## `Node64.DNS64DHCPIPv6Router` (struct)
+
+A router seen on the network (Router Advertisement).
+
+- `interface: String?` – Interface it was seen on.
+- `source: String?` – Source address, e.g. `fe80::1`.
+- `routerLifetime: Int?` – Router lifetime in seconds, 0 = no default router.
+- `managed: Bool?` – M flag: addresses via DHCPv6.
+- `other: Bool?` – O flag: further settings via DHCPv6.
+- `prefixes: [DNS64DHCPIPv6Prefix]?` – Announced prefixes.
+- `dns: [String]?` – Announced DNS servers.
+- `domains: [String]?` – Announced search domains.
+- `lastSeen: Date?` – Time it was last seen.
+
+## `Node64.DNS64DHCPIPv6State` (struct)
+
+Settings and state of the IPv6 DNS announcement.
+
+- `config: DNS64DHCPIPv6Config?` – Settings.
+- `running: Bool?` – Whether the sender runs.
+- `error: String?` – Socket error (for example without `cap_net_raw`).
+- `status: [DNS64DHCPIPv6InterfaceStatus]?` – State per interface.
+- `routers: [DNS64DHCPIPv6Router]?` – Routers of other devices (only while the sender runs).
+
+## `Node64.DNS64DHCPMode` (open enum)
+
+Mode of the DHCP server on this node.
+
+- `.off` = `"off"`
+- `.observe` = `"observe"`
+- `.on` = `"on"`
+
+## `Node64.DNS64DHCPReservation` (struct)
+
+A fixed DHCP address (MAC and IP are unique per network). Schema `DNS64DHCPReservation`.
+
+- `id: Int` – Reservation ID.
+- `scopeID: Int?` – ID of the DHCP network.
+- `mac: String?` – MAC address, e.g. `aa:bb:cc:dd:ee:ff`.
+- `ip: String?` – Fixed IP address.
+- `name: String?` – Host name.
+- `comment: String?` – Comment.
+- `groupID: Int?` – Only when creating: also adds the MAC to this device group.
+
+## `Node64.DNS64DHCPReservationInput` (struct)
+
+Writable fields of a fixed DHCP address for create and update.
+
+- `scopeID: Int` – ID of the DHCP network.
+- `mac: String` – MAC address, e.g. `aa:bb:cc:dd:ee:ff`.
+- `ip: String` – Fixed IP address.
+- `name: String?` – Host name.
+- `comment: String?` – Comment.
+- `groupID: Int?` – Only when creating: also adds the MAC to this device group.
+
+## `Node64.DNS64DHCPRole` (open enum)
+
+Role of this node in the cluster.
+
+- `.primary` = `"primary"`
+- `.reserve` = `"reserve"`
+
+## `Node64.DNS64DHCPScope` (struct)
+
+A DHCP network (one per interface). Schema `DNS64DHCPScope`.
+
+- `id: Int` – Network ID.
+- `name: String?` – Name.
+- `interface: String?` – Host interface, also VLAN (`eth0.20`).
+- `subnet: String?` – Subnet in CIDR notation, e.g. `192.168.1.0/24`.
+- `rangeStart: String?` – First address of the pool.
+- `rangeEnd: String?` – Last address of the pool.
+- `router: String?` – Default router; empty means none.
+- `dns: [String]?` – DNS servers; empty means this node (recommended), at most 4.
+- `domain: String?` – Domain.
+- `leaseHours: Int?` – Lease time in hours (1-8760, 0 = 24).
+- `ntp: [String]?` – NTP servers.
+- `authoritative: Bool?` – Answers requests for addresses that do not fit here with NAK (switching over from the router).
+- `bootServer: String?` – PXE: TFTP server (option 66).
+- `bootBIOS: String?` – PXE: boot file for BIOS clients.
+- `bootUEFI: String?` – PXE: boot file for UEFI clients.
+- `bootIPXE: String?` – Boot file if the client already runs iPXE.
+- `relay: Bool?` – Network behind a DHCP relay (requests only with `giaddr`, several networks per interface possible).
+- `enabled: Bool?` – Whether the network is on (read-only).
+- `createdAt: Date?` – Creation time (read-only).
+
+## `Node64.DNS64DHCPScopeInput` (struct)
+
+Writable fields of a DHCP network for create and update.
+
+- `name: String?` – Name.
+- `interface: String` – Host interface, also VLAN (`eth0.20`).
+- `subnet: String` – Subnet in CIDR notation, e.g. `192.168.1.0/24`.
+- `rangeStart: String` – First address of the pool.
+- `rangeEnd: String` – Last address of the pool.
+- `router: String?` – Default router; empty means none.
+- `dns: [String]?` – DNS servers; empty means this node (recommended), at most 4.
+- `domain: String?` – Domain.
+- `leaseHours: Int?` – Lease time in hours (1-8760, 0 = 24).
+- `ntp: [String]?` – NTP servers.
+- `authoritative: Bool?` – Answers requests for addresses that do not fit here with NAK.
+- `bootServer: String?` – PXE: TFTP server (option 66).
+- `bootBIOS: String?` – PXE: boot file for BIOS clients.
+- `bootUEFI: String?` – PXE: boot file for UEFI clients.
+- `bootIPXE: String?` – Boot file if the client already runs iPXE.
+- `relay: Bool?` – Network behind a DHCP relay.
 
 ## `Node64.DNS64Docker` (struct)
 
@@ -2057,134 +2217,6 @@ One input field of a DNS provider.
 - `label: String?` – Label.
 - `secret: Bool?` – Secret value (stored, never returned).
 - `optional: Bool?` – Field may stay empty.
-
-## `Node64.DockerContainer` (struct)
-
-A Docker container with monitoring values and its Docker check.
-
-- `name: String?` – Name.
-- `kind: DockerContainerKind?` – Overall kind.
-- `health: DockerHealth?` – Container healthcheck.
-- `id: String?` – Container ID.
-- `image: String?` – Image.
-- `state: String?` – Docker state, e.g. `running`.
-- `created: Date?` – Creation time.
-- `ports: [String]?` – Published ports, e.g. `8080->80/tcp`.
-- `check: DockerContainerCheck?` – Check of this container; `nil` without a check.
-- `key: String?` – Key, e.g. `docker/web`.
-- `monitor: DockerMonitorState?` – State as the rules see it.
-- `detail: DockerContainerDetail?` – Cause of a problem.
-- `bad: Bool?` – In a bad state or container missing.
-- `asCheck: Bool?` – Monitored as a check.
-- `excluded: Bool?` – Excluded by the label `node64.nomonitor=true`.
-- `muted: Bool?` – Muted.
-- `cpu: Double?` – CPU share 0..1 relative to `cpus`.
-- `cpus: Double?` – CPU limit or host cores.
-- `mem: Int?` – Memory in bytes (without inactive file cache).
-- `maxMem: Int?` – Memory limit or host RAM in bytes.
-- `netIn: Double?` – Network in, bytes per second.
-- `netOut: Double?` – Network out, bytes per second.
-- `diskRead: Double?` – Disk read, bytes per second.
-- `diskWrite: Double?` – Disk write, bytes per second.
-- `uptime: Int?` – Uptime in seconds.
-- `restartCount: Int?` – Restarts by Docker.
-- `exitCode: Int?` – Exit code.
-
-## `Node64.DockerContainerCheck` (struct)
-
-The Docker check attached to a `DockerContainer`.
-
-- `token: String?` – Token of the check.
-- `name: String?` – Name of the check.
-- `state: String?` – State of the check.
-- `message: String?` – Message of the check.
-
-## `Node64.DockerContainerDetail` (open enum)
-
-Cause of a container problem.
-
-- `.unhealthy` = `"unhealthy"`
-- `.restarting` = `"restarting"`
-- `.exited` = `"exited"`
-- `.oom` = `"oom"`
-- `.dead` = `"dead"`
-
-## `Node64.DockerContainerKind` (open enum)
-
-Kind (overall state) of a Docker container.
-
-- `.running` = `"running"`
-- `.stopped` = `"stopped"`
-- `.paused` = `"paused"`
-- `.restarting` = `"restarting"`
-- `.missing` = `"missing"`
-- `.remote` = `"remote"`
-- `.unknown` = `"unknown"`
-
-## `Node64.DockerContainers` (struct)
-
-Result of `Node64/HC/Docker/containers()`.
-
-- `host: String?` – Docker host, e.g. `unix:///var/run/docker.sock`.
-- `socket: Bool?` – The Docker socket is reachable.
-- `error: String?` – Error with a hint when the socket is missing.
-- `containers: [DockerContainer]?` – Containers.
-- `systemID: Int?` – Docker host of the monitoring; absent if there is none.
-- `monitored: Bool?` – Values come from running monitoring.
-
-## `Node64.DockerCredentials` (struct)
-
-Schema `DockerCredentials`: which credentials are stored for a Docker host (never the keys themselves).
-
-- `key: Bool?` – Private key (SSH or TLS client) is stored.
-- `cert: Bool?` – TLS client certificate is stored.
-- `ca: Bool?` – CA of the Docker daemon is stored.
-- `publicKey: String?` – SSH: line for `~/.ssh/authorized_keys` on the Docker host.
-
-## `Node64.DockerHealth` (open enum)
-
-Healthcheck state of a Docker container.
-
-- `.healthy` = `"healthy"`
-- `.unhealthy` = `"unhealthy"`
-- `.starting` = `"starting"`
-
-## `Node64.DockerMonitorState` (open enum)
-
-State of a container as the rules see it.
-
-- `.running` = `"running"`
-- `.stopped` = `"stopped"`
-- `.paused` = `"paused"`
-- `.error` = `"error"`
-- `.unknown` = `"unknown"`
-
-## `Node64.DockerProbe` (struct)
-
-Schema `DockerProbe`: result of testing a Docker host.
-
-- `ok: Bool?` – Connection works.
-- `error: String?` – Error message.
-- `fingerprint: String?` – Seen host key (SSH) or certificate (TLS), 64 hex; usable as `pinSHA256`.
-- `fingerprintDisplay: String?` – Fingerprint for comparing: SSH like `ssh-keygen` (`SHA256:…`), TLS with colons.
-- `trusted: Bool?` – TLS: certificate confirmed by the CA or system CA (no pin needed).
-- `needConfirm: Bool?` – Only the fingerprint was read: test again with it as `pinSHA256`.
-- `pinDiffers: Bool?` – Seen fingerprint differs from the given pin.
-- `info: Info?`
-- `containers: Int?` – Number of containers.
-- `running: Int?` – Number of running containers.
-- `warning: String?` – Warning.
-- `publicKey: String?` – SSH: public part of the key in use (`authorized_keys` line).
-
-## `Node64.DockerProbe.Info` (struct)
-
-Docker daemon information.
-
-- `name: String?` – Host name.
-- `os: String?` – Operating system.
-- `version: String?` – Docker version.
-- `ncpu: Int?` – Number of CPUs.
-- `memTotal: Int?` – Total memory in bytes.
 
 ## `Node64.DynDNSAccountName` (struct)
 
@@ -3726,6 +3758,14 @@ Request counters of a host since the module started.
 - `errors: Int?` – Failed requests since the module started.
 - `blocked: Int?` – Rejected requests since the module started.
 
+## `Node64.ProxyProtocolVersion` (open enum)
+
+PROXY protocol header sent to a target (`proxy_protocol`).
+
+- `.off` = `""`
+- `.v1` = `"v1"`
+- `.v2` = `"v2"`
+
 ## `Node64.ProxyStream` (struct)
 
 A TCP/UDP stream. Schema `Stream` (renamed, the name is too generic).
@@ -3750,6 +3790,7 @@ A TCP/UDP stream. Schema `Stream` (renamed, the name is too generic).
 - `geoCountries: [String]?` – ISO country codes, at most 60.
 - `bwDownMbit: Int?` – Bandwidth to the visitor in Mbit/s for all connections together; `0` = unlimited.
 - `bwUpMbit: Int?` – Bandwidth from the visitor in Mbit/s; `0` = unlimited.
+- `proxyProtocol: ProxyProtocolVersion?` – TCP only: PROXY protocol header to the target (`""` = off); sent before all data, only enable if the target expects it. UDP-only streams answer 422; changing it does not restart the stream.
 
 ## `Node64.ProxyStreamInput` (struct)
 
@@ -3768,6 +3809,7 @@ Writable fields of a stream. Schema `StreamInput` (renamed).
 - `bwDownMbit: Int?` – Bandwidth to the visitor in Mbit/s for all connections together, 0-100000; `0` = unlimited.
 - `bwUpMbit: Int?` – Bandwidth from the visitor in Mbit/s, 0-100000; `0` = unlimited.
 - `onlineName: String?` – Port mapper: expose the port via CDN64 under this name (mode 3); `""` = local only.
+- `proxyProtocol: ProxyProtocolVersion?` – TCP only: PROXY protocol header to the target (`""` = off); sent before all data, only enable if the target expects it. UDP-only streams answer 422; changing it does not restart the stream.
 
 ## `Node64.ProxyStreamStats` (struct)
 
@@ -3777,6 +3819,15 @@ Connection counters of a stream.
 - `active: Int?` – Currently active connections.
 - `bytesIn: Int?` – Bytes received from clients.
 - `bytesOut: Int?` – Bytes sent to clients.
+
+## `Node64.ProxyTargetHTTP` (open enum)
+
+HTTP version towards the target (`target_http`).
+
+- `.inherit` = `""`
+- `.auto` = `"auto"`
+- `.h1` = `"h1"`
+- `.h2c` = `"h2c"`
 
 ## `Node64.PushResult` (struct)
 
@@ -3790,307 +3841,6 @@ Status reported by a push heartbeat (query `status`).
 
 - `.up` = `"up"`
 - `.down` = `"down"`
-
-## `Node64.PVEAsCheckAllResult` (struct)
-
-Result of the `ascheck-all` endpoints.
-
-- `added: Int?` – Newly created checks.
-- `failed: Int?` – Number of failures.
-- `error: String?` – First error (only when `failed > 0`).
-- `key: String?` – i18n key of the first error.
-
-## `Node64.PVEAsCheckScope` (open enum)
-
-Scope of "add all as check".
-
-- `.guests` = `"guests"`
-- `.nodes` = `"nodes"`
-
-## `Node64.PVEExpectRunning` (enum)
-
-Value of `expect_running` in `PVESettingsInput`.
-
-- `case automatic` – Automatic (sends `null`).
-- `case running` – The guest should run.
-- `case stopped` – The guest should not run.
-
-## `Node64.PVEKindFilter` (open enum)
-
-Filter for `Node64/HC/Proxmox/Systems/list(kind:)`.
-
-- `.pve` = `"pve"`
-- `.pbs` = `"pbs"`
-- `.docker` = `"docker"`
-- `.all` = `"all"`
-
-## `Node64.PVEPoint` (struct)
-
-Schema `PVEPoint`: one data point of a series.
-
-- `t: Date?` – Time.
-- `cpu: Double?` – CPU in percent.
-- `cpuMax: Double?` – Peak CPU.
-- `mem: Double?` – Memory in percent.
-- `disk: Double?` – Disk in percent (`nil` if unknown).
-- `netIn: Double?` – Network in, bytes per second.
-- `netOut: Double?` – Network out, bytes per second.
-- `diskRead: Double?` – Disk read, bytes per second.
-- `diskWrite: Double?` – Disk write, bytes per second.
-
-## `Node64.PVEProbe` (struct)
-
-Schema `PVEProbe`: result of a connection test.
-
-- `ok: Bool?` – Connection works.
-- `error: String?` – Error message.
-- `version: String?` – Software version.
-- `cluster: String?` – Cluster name.
-- `nodes: [String]?` – Node names.
-- `guests: Int?` – Number of guests.
-- `certSHA256: String?` – SHA-256 fingerprint of the certificate (also given when it is untrusted).
-- `certSubject: String?` – Subject of the certificate.
-- `certTrusted: Bool?` – The certificate is trusted.
-- `permWarning: String?` – Warning about missing permissions of the token.
-
-## `Node64.PVEResource` (struct)
-
-Schema `PVEResource`: a node, guest or Docker container from the last query.
-
-- `key: String?`
-- `type: PVEResourceType?` – Type.
-- `node: String?` – Node name.
-- `vmid: Int?` – VM ID.
-- `name: String?` – Name.
-- `state: PVEResourceState?` – State.
-- `status: String?` – Raw status.
-- `qmp: String?` – QMP status.
-- `lock: String?` – Lock.
-- `tags: [String]?` – Tags.
-- `haState: String?` – HA state.
-- `template: Bool?` – Is a template.
-- `cpu: Double?` – CPU share 0..1 (Docker: relative to the CPU limit or host cores).
-- `maxCPU: Double?` – Number of CPUs.
-- `mem: Int?` – Memory in bytes.
-- `maxMem: Int?` – Memory limit in bytes.
-- `disk: Int?` – Disk usage in bytes.
-- `maxDisk: Int?` – Disk size in bytes.
-- `uptime: Int?` – Uptime in seconds.
-- `netIn: Double?` – Network in, bytes per second.
-- `netOut: Double?` – Network out, bytes per second.
-- `diskRead: Double?` – Disk read, bytes per second.
-- `diskWrite: Double?` – Disk write, bytes per second.
-- `restarted: Bool?` – Restarted since the last query.
-- `bad: Bool?` – In a bad state.
-- `excluded: Bool?` – Excluded (template, tag `nomonitor`; Docker: label `node64.nomonitor=true`).
-- `muted: Bool?` – Muted.
-- `asCheck: Bool?` – Monitored as a healthcheck.
-- `checkToken: String?` – Token of the check.
-- `containerID: String?` – Docker only: container ID (12 characters).
-- `image: String?` – Docker only: image.
-- `health: DockerHealth?` – Docker only: container healthcheck.
-- `restartCount: Int?` – Docker only: restarts by Docker.
-- `exitCode: Int?` – Docker only: exit code.
-- `oomKilled: Bool?` – Docker only: killed by the OOM killer.
-- `created: Int?` – Docker only: creation time (Unix).
-- `ports: [String]?` – Docker only: published ports, e.g. `8080->80/tcp`.
-- `labels: [String: String]?` – Docker only: labels (at most 64).
-- `detail: DockerContainerDetail?` – Docker only, with state `error`: the cause.
-
-## `Node64.PVEResources` (struct)
-
-Result of the `resources` endpoints: the system and its nodes and guests (or containers).
-
-- `system: PVESystem?` – The system.
-- `resources: [PVEResource]?` – Resources from the last query.
-
-## `Node64.PVEResourceState` (open enum)
-
-State of a `PVEResource`.
-
-- `.running` = `"running"`
-- `.stopped` = `"stopped"`
-- `.paused` = `"paused"`
-- `.suspended` = `"suspended"`
-- `.backup` = `"backup"`
-- `.locked` = `"locked"`
-- `.online` = `"online"`
-- `.offline` = `"offline"`
-- `.unknown` = `"unknown"`
-- `.error` = `"error"`
-
-## `Node64.PVEResourceType` (open enum)
-
-Type of a `PVEResource`.
-
-- `.node` = `"node"`
-- `.qemu` = `"qemu"`
-- `.lxc` = `"lxc"`
-- `.docker` = `"docker"`
-
-## `Node64.PVERuleSet` (struct)
-
-Schema `PVERuleSet`: rules of one level. Missing fields are inherited (system, node, guest).
-
-- `crashed: Bool?` – Report crashed guests.
-- `stopped: Bool?` – Report stopped guests.
-- `paused: Bool?` – Report paused guests.
-- `suspended: Bool?` – Report suspended guests.
-- `offline: Bool?` – Report offline nodes.
-- `unreachable: Bool?` – Report an unreachable system.
-- `restarted: Bool?` – Report restarted guests.
-- `cpu: PVEThreshold?` – CPU threshold.
-- `mem: PVEThreshold?` – Memory threshold.
-- `disk: PVEThreshold?` – Disk threshold.
-- `delay: Int?` – Report only after this many queries (1 to 60).
-- `channels: [Int]?` – Channel IDs for the notifications: `nil` inherits, an empty array uses the default channels.
-
-## `Node64.PVESeries` (struct)
-
-Result of the `series` endpoints.
-
-- `key: String?` – Key of the node, guest or container.
-- `range: String?` – Requested range.
-- `stepSeconds: Int?` – Resolution in seconds.
-- `from: Date?` – Start of the range.
-- `to: Date?` – End of the range.
-- `points: [PVEPoint]?` – Data points.
-
-## `Node64.PVESeriesRange` (open enum)
-
-Time range of `PVESeries`.
-
-- `.hour` = `"1h"`
-- `.day` = `"24h"`
-- `.week` = `"7d"`
-- `.month` = `"30d"`
-
-## `Node64.PVESettings` (struct)
-
-Schema `PVESettings`: settings of one level (system, node, guest or container).
-
-- `systemID: Int?` – ID of the system.
-- `key: String?` – Level key; empty is the system itself.
-- `muted: Bool?` – Muted.
-- `asCheck: Bool?` – Monitored as a healthcheck.
-- `checkToken: String?` – Token of the check.
-- `expectRunning: Bool?` – Whether the guest is expected to run; `nil` is automatic.
-- `seenRunning: Bool?` – Seen running at least once.
-- `rules: PVERuleSet?` – Rules of this level.
-
-## `Node64.PVESettingsInput` (struct)
-
-Schema `PVESettingsInput`: partial update of one level.
-
-- `muted: Bool?` – Mute the level.
-- `asCheck: Bool?` – Create (`true`) or delete (`false`) the healthcheck of this level.
-- `name: String?` – Name of the new check; only with `asCheck: true` (empty = "System – Eintrag"); an existing check keeps its name.
-- `expectRunning: PVEExpectRunning?` – Expected state; `nil` leaves it, `PVEExpectRunning/automatic` sends `null`.
-- `rules: PVERuleSet?` – Rules of this level.
-
-## `Node64.PVESettingsOverview` (struct)
-
-Result of the `settings` read endpoints.
-
-- `systemID: Int?` – ID of the system.
-- `items: [String: PVESettings]?` – Settings per level key.
-- `effective: JSONValue?` – Effective rule per key (`""` is the system); `channels` holds the effective channel IDs.
-- `defaults: JSONValue?` – Default rules.
-
-## `Node64.PVESettingsResult` (struct)
-
-Result of the `updateSettings` endpoints.
-
-- `settings: PVESettings?` – The stored settings of the level.
-- `effective: JSONValue?` – Effective rules after the change.
-
-## `Node64.PVESystem` (struct)
-
-Schema `PVESystem`: a Proxmox VE system (single node or cluster) or a Docker host with its state.
-
-- `id: Int` – ID of the system.
-- `kind: PVESystemKind?` – Kind of the system.
-- `name: String?` – Name.
-- `addresses: [String]?` – Addresses, e.g. `https://pve1.lan:8006`.
-- `tokenID: String?` – API token ID, e.g. `node64@pve!monitor`.
-- `pinSHA256: String?` – Pinned certificate fingerprint (64 hex characters); empty uses the system CA.
-- `interval: Int?` – Query interval in seconds (15 to 300).
-- `enabled: Bool?` – Monitoring is switched on.
-- `created: Date?` – Creation time.
-- `uid: String?` – Cluster-wide identifier (32 hex characters).
-- `home: String?` – Node that created the system; absent means this node.
-- `hasSecret: Bool?` – A secret is stored and readable.
-- `state: PVESystemState?` – State from the last query.
-- `error: String?` – Error of the last query.
-- `version: String?` – Software version.
-- `cluster: String?` – Cluster name.
-- `quorate: Bool?` – Cluster has quorum.
-- `address: String?` – Address that answered the last query.
-- `lastPoll: Date?` – Time of the last query.
-- `nodes: Int?` – Number of nodes.
-- `nodesOnline: Int?` – Number of nodes online.
-- `guests: Int?` – Number of guests (Docker: containers).
-- `guestsRunning: Int?` – Number of running guests.
-- `guestsBad: Int?` – Number of guests in a bad state.
-- `credentials: DockerCredentials?` – Docker hosts via SSH/TLS: which credentials are stored (never the keys).
-- `storages: [Storage]?` – Proxmox VE only: storages from the last query.
-- `pbs: JSONValue?` – Proxmox Backup Server only: datastores, services, update, failed tasks (free-form object in the spec).
-
-## `Node64.PVESystem.Storage` (struct)
-
-Storage of a Proxmox VE system.
-
-- `storage: String?` – Storage name.
-- `node: String?` – Node.
-- `shared: Bool?` – Shared storage.
-- `type: String?` – Storage type.
-- `content: String?` – Content types.
-- `status: String?` – Status.
-- `total: Int?` – Total bytes.
-- `used: Int?` – Used bytes.
-
-## `Node64.PVESystemInput` (struct)
-
-Schema `PVESystemInput`: body for creating or partially updating a system.
-
-- `kind: PVESystemKind?`
-- `name: String?` – Name.
-- `addresses: [String]?` – Addresses.
-- `tokenID: String?` – API token ID.
-- `secret: String?` – API token secret (write only).
-- `pinSHA256: String?` – Pinned certificate fingerprint (64 hex characters).
-- `interval: Int?` – Query interval in seconds (15 to 300, default 30).
-- `enabled: Bool?` – Switch monitoring on or off (default on); toggling pauses or starts the system's checks.
-- `privateKey: String?` – Docker only: private SSH or TLS client key (PEM, write only, secret); empty keeps the stored one.
-- `cert: String?` – Docker (https) only: TLS client certificate (PEM); `""` removes certificate and key.
-- `ca: String?` – Docker (https) only: CA of the Docker daemon (PEM); `""` removes it.
-- `generateKey: Bool?` – Docker (ssh) only: generate and store a new ed25519 key; the public part appears in `credentials.publicKey`.
-
-## `Node64.PVESystemKind` (open enum)
-
-Kind of a monitored system.
-
-- `.pve` = `"pve"`
-- `.pbs` = `"pbs"`
-- `.docker` = `"docker"`
-
-## `Node64.PVESystemState` (open enum)
-
-State of a monitored system.
-
-- `.ok` = `"ok"`
-- `.warn` = `"warn"`
-- `.down` = `"down"`
-- `.error` = `"error"`
-- `.off` = `"off"`
-- `.pending` = `"pending"`
-
-## `Node64.PVEThreshold` (struct)
-
-Schema `PVEThreshold`: a threshold rule.
-
-- `percent: Double?` – Percent; `0` switches the rule off.
-- `minutes: Int?` – Minutes the value has to stay above the threshold.
 
 ## `Node64.Sonar64Inbound` (struct)
 
@@ -4361,14 +4111,6 @@ Request body of `Node64/HC/StatusPages/addItems(_:_:)`.
 
 - `groupID: Int?` – Group to add to (`0` or `nil` = the first group).
 - `tokens: [String]?` – Check tokens.
-- `resources: [Resource]?` – Proxmox nodes, guests or Docker containers.
-
-## `Node64.StatusPageItemsInput.Resource` (struct)
-
-A system resource.
-
-- `systemID: Int?` – ID of the Proxmox or Docker system.
-- `key: String?`
 
 ## `Node64.StatusPageLanguage` (open enum)
 

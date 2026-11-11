@@ -103,7 +103,7 @@ extension IPv64.HC2 {
         ///   - token: Check token.
         ///   - execution: Target execution location.
         ///   - nodeID: Owner node for `local`/`both`; given alone it means a single measuring node.
-        ///   - nodes: Measuring node IDs for `local`/`both` (Docker/Push exactly one).
+        ///   - nodes: Measuring node IDs for `local`/`both` (several allowed).
         ///   - locations: Locations for `online`/`both`.
         ///
         /// `POST /hc2/checks/{token}/move`

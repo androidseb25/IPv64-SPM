@@ -70,7 +70,8 @@ extension Node64.DNS64.AllowLists {
         try await client.send(Request(.get, "/dns64/allowlists"))
     }
 
-    /// Adds an allow list (enabled). Formats: one domain per line, hosts or Adblock (`||example.com^`, `@@||example.com^`).
+    /// Adds an allow list (enabled). Formats: one domain per line, hosts or Adblock (`||example.com^`, `@@||example.com^`;
+    /// `|example.com^` and `@@|example.com^` match exactly this name).
     /// Answers `400` if invalid or already present.
     ///
     /// - Returns: The new settings.
@@ -82,6 +83,9 @@ extension Node64.DNS64.AllowLists {
     }
 
     /// Adds several allow lists at once.
+    ///
+    /// Formats: one domain per line, hosts, or Adblock (`||example.com^` and `@@||example.com^` match subdomains too;
+    /// `|example.com^` and `@@|example.com^` match exactly this name).
     ///
     /// Answers `422` if no list was added; that body has no error fields, so it is thrown as
     /// `Node64Error.httpStatus(code: 422, body:)` and the body decodes as ``Node64/DNS64ListsAddResult``.

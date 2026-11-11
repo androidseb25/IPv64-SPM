@@ -1,6 +1,6 @@
 # IPv64 – Lücken in der OpenAPI-Spec
 
-Stand: Spec „IPv64.net API“ 2.0.0 (OpenAPI 3.1.0, 201 Operationen), zuletzt abgeglichen am 09.11.2026 von `https://ipv64.net/api/v2/openapi.json` und mit dem Swift-Client `IPv64` abgeglichen.
+Stand: Spec „IPv64.net API“ 2.0.0 (OpenAPI 3.1.0, 201 Operationen), zuletzt abgeglichen am 11.11.2026 von `https://ipv64.net/api/v2/openapi.json` und mit dem Swift-Client `IPv64` abgeglichen.
 Jede Lücke hier löst der Client mit einer Annahme, einem nachsichtigen Decoder oder einem untypisierten Rückgabewert. Wird die Spec ergänzt, lässt sich der Client typisieren.
 
 ## 1. 2xx-Antworten ohne oder mit widersprüchlichem Schema

@@ -136,6 +136,34 @@ extension Node64 {
         }
     }
 
+    /// PROXY protocol header sent to a target (`proxy_protocol`).
+    public struct ProxyProtocolVersion: IPv64OpenEnum {
+        public let rawValue: String
+        public init(rawValue: String) { self.rawValue = rawValue }
+
+        /// Off (empty string).
+        public static let off: Self = ""
+        /// Text header (HAProxy `send-proxy`).
+        public static let v1: Self = "v1"
+        /// Binary header (HAProxy `send-proxy-v2`).
+        public static let v2: Self = "v2"
+    }
+
+    /// HTTP version towards the target (`target_http`).
+    public struct ProxyTargetHTTP: IPv64OpenEnum {
+        public let rawValue: String
+        public init(rawValue: String) { self.rawValue = rawValue }
+
+        /// Like the host (locations) or automatic (hosts); empty string.
+        public static let inherit: Self = ""
+        /// Automatic: HTTP/2 via ALPN for https targets if offered, otherwise HTTP/1.1.
+        public static let auto: Self = "auto"
+        /// HTTP/1.1 only (NTLM/Kerberos, Exchange/IIS).
+        public static let h1: Self = "h1"
+        /// http target: HTTP/2 without TLS (gRPC); https target: HTTP/2 only.
+        public static let h2c: Self = "h2c"
+    }
+
     /// A path-specific target of a proxy host. Schema `CDNLocation`.
     public struct CDNLocation: Codable, Hashable, Sendable {
         /// Path prefix.
@@ -162,6 +190,8 @@ extension Node64 {
         public var contentType: String?
         /// Own values of the location (action `""` only); unset values come from the host.
         public var advanced: CDNLocationAdvanced?
+        /// On denied access (access list answers 403): 302 redirect here instead of the error page; relative path (`/...`) or http(s) URL, `""` = error page. Not for lists that require a login (401).
+        public var deniedRedirect: String?
 
         /// Creates an instance; pass only the fields you want to set.
         public init(
@@ -176,7 +206,8 @@ extension Node64 {
             status: Int? = nil,
             body: String? = nil,
             contentType: String? = nil,
-            advanced: CDNLocationAdvanced? = nil
+            advanced: CDNLocationAdvanced? = nil,
+            deniedRedirect: String? = nil
         ) {
             self.path = path
             self.scheme = scheme
@@ -190,6 +221,7 @@ extension Node64 {
             self.body = body
             self.contentType = contentType
             self.advanced = advanced
+            self.deniedRedirect = deniedRedirect
         }
 
         enum CodingKeys: String, CodingKey {
@@ -202,6 +234,7 @@ extension Node64 {
             case action, status, body
             case contentType = "content_type"
             case advanced
+            case deniedRedirect = "denied_redirect"
         }
     }
 
@@ -248,6 +281,8 @@ extension Node64 {
         public var responseHeaders: [CDNHeader]?
         /// Response headers to remove.
         public var responseRemove: [String]?
+        /// HTTP version towards the target of this location; `""` = like the host.
+        public var targetHTTP: ProxyTargetHTTP?
 
         /// Creates an instance; pass only the fields you want to set.
         public init(
@@ -257,8 +292,10 @@ extension Node64 {
             requestHeaders: [CDNHeader]? = nil,
             requestRemove: [String]? = nil,
             responseHeaders: [CDNHeader]? = nil,
-            responseRemove: [String]? = nil
+            responseRemove: [String]? = nil,
+            targetHTTP: ProxyTargetHTTP? = nil
         ) {
+            self.targetHTTP = targetHTTP
             self.timeoutSeconds = timeoutSeconds
             self.maxBodyMB = maxBodyMB
             self.buffering = buffering
@@ -276,6 +313,7 @@ extension Node64 {
             case requestRemove = "request_remove"
             case responseHeaders = "response_headers"
             case responseRemove = "response_remove"
+            case targetHTTP = "target_http"
         }
     }
 
@@ -344,6 +382,10 @@ extension Node64 {
         public var onlyLocations: Bool?
         /// Proxy hosts only: path put before every request (`/recipes`: `/soup` becomes `/recipes/soup` at the target).
         public var targetPath: String?
+        /// Proxy hosts only: HTTP version towards the target; `""`/`auto` = automatic, `h1` = HTTP/1.1 only, `h2c` = HTTP/2 without TLS (gRPC) or HTTP/2 only for https targets. WebSocket upgrades always use HTTP/1.1; unknown values are rejected (400).
+        public var targetHTTP: ProxyTargetHTTP?
+        /// Kind `passthrough` only: PROXY protocol header to the target (sent before the ClientHello, also via CDN64); `""` = off. Only enable if the target expects it. Dropped for other kinds, unknown values are rejected (422).
+        public var proxyProtocol: ProxyProtocolVersion?
 
         /// Creates an instance; pass only the fields you want to set.
         public init(
@@ -372,8 +414,12 @@ extension Node64 {
             maintenanceHTML: String? = nil,
             maintenanceStyle: CDNMaintenanceStyle? = nil,
             onlyLocations: Bool? = nil,
-            targetPath: String? = nil
+            targetPath: String? = nil,
+            targetHTTP: ProxyTargetHTTP? = nil,
+            proxyProtocol: ProxyProtocolVersion? = nil
         ) {
+            self.targetHTTP = targetHTTP
+            self.proxyProtocol = proxyProtocol
             self.requestHeaders = requestHeaders
             self.requestRemove = requestRemove
             self.responseHeaders = responseHeaders
@@ -429,6 +475,8 @@ extension Node64 {
             case maintenanceStyle = "maintenance_style"
             case onlyLocations = "only_locations"
             case targetPath = "target_path"
+            case targetHTTP = "target_http"
+            case proxyProtocol = "proxy_protocol"
         }
     }
 

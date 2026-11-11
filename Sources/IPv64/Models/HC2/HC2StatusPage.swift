@@ -45,7 +45,7 @@ public struct HC2StatusNoticeKind: IPv64OpenEnum {
 public struct HC2StatusGroup: Codable, Hashable, Sendable {
     /// Heading of the group; empty means no heading.
     public var name: String?
-    /// Tokens of the checks in display order (no Docker/Proxmox checks).
+    /// Tokens of the checks in display order.
     public var tokens: [String]
 
     /// Creates a group.

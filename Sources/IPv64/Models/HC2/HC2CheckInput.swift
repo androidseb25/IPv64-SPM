@@ -62,7 +62,7 @@ public struct HC2CheckInput: Encodable, Hashable, Sendable {
     /// Owner node for `local`/`both`; given alone it means a single measuring node.
     public var nodeID: String?
 
-    /// Measuring node IDs for `local`/`both`; several allowed, Docker/Push exactly one.
+    /// Measuring node IDs for `local`/`both`; several allowed.
     public var nodes: [String]?
 
     /// Locations for `online`/`both` (count depends on the account class).

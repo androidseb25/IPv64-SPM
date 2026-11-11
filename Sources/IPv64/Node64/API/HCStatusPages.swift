@@ -138,9 +138,8 @@ extension Node64.HC.StatusPages.Notices {
 }
 
 extension Node64.HC.StatusPages {
-    /// Adds entries to a group of a status page: checks by token, and Proxmox nodes, guests or Docker containers
-    /// by resource. A missing check of a resource is created as with "as check". Existing entries stay (not duplicated).
-    /// Fails with 422 on invalid input.
+    /// Adds entries to a group of a status page: checks by token. Existing entries stay (not duplicated).
+    /// Fails with 422 on invalid input, and since Healthchecks 3.0.0 also for the removed `resources` (Proxmox/Docker).
     ///
     /// - Parameters:
     ///   - id: ID of the status page.

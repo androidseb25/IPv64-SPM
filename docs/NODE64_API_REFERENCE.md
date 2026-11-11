@@ -151,6 +151,23 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `PUT /dns64/denylist` | `node64.dns64.denylist.replace` |
 | `GET /dns64/device-names` | `node64.dns64.devices.names` |
 | `GET /dns64/devices` | `node64.dns64.devices.list` |
+| `GET /dns64/dhcp` | `node64.dns64.dhcp.status` |
+| `GET /dns64/dhcp/ipv6` | `node64.dns64.dhcp.ipv6` |
+| `PUT /dns64/dhcp/ipv6` | `node64.dns64.dhcp.updateIPv6` |
+| `POST /dns64/dhcp/ipv6/probe` | `node64.dns64.dhcp.probeIPv6` |
+| `DELETE /dns64/dhcp/leases/{scope}/{mac}` | `node64.dns64.dhcp.releaseLease` |
+| `PUT /dns64/dhcp/mode` | `node64.dns64.dhcp.setMode` |
+| `GET /dns64/dhcp/reservations` | `node64.dns64.dhcp.reservations.list` |
+| `POST /dns64/dhcp/reservations` | `node64.dns64.dhcp.reservations.create` |
+| `DELETE /dns64/dhcp/reservations/{id}` | `node64.dns64.dhcp.reservations.delete` |
+| `PUT /dns64/dhcp/reservations/{id}` | `node64.dns64.dhcp.reservations.update` |
+| `PUT /dns64/dhcp/role` | `node64.dns64.dhcp.setRole` |
+| `GET /dns64/dhcp/scopes` | `node64.dns64.dhcp.scopes.list` |
+| `POST /dns64/dhcp/scopes` | `node64.dns64.dhcp.scopes.create` |
+| `DELETE /dns64/dhcp/scopes/{id}` | `node64.dns64.dhcp.scopes.delete` |
+| `PUT /dns64/dhcp/scopes/{id}` | `node64.dns64.dhcp.scopes.update` |
+| `POST /dns64/dhcp/scopes/{id}/disable` | `node64.dns64.dhcp.scopes.disable` |
+| `POST /dns64/dhcp/scopes/{id}/enable` | `node64.dns64.dhcp.scopes.enable` |
 | `GET /dns64/docker` | `node64.dns64.docker` |
 | `GET /dns64/forwards` | `node64.dns64.forwards.list` |
 | `POST /dns64/forwards` | `node64.dns64.forwards.create` |
@@ -251,32 +268,6 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `PUT /group/sync` | `node64.cluster.setSync` |
 | `POST /group/users` | `node64.cluster.resolveUserConflict` |
 | `GET /health` | `node64.node.health` |
-| `GET /healthchecks/docker/containers` | `node64.hc.docker.containers` |
-| `POST /healthchecks/docker/enable` | `node64.hc.docker.enable` |
-| `POST /healthchecks/docker/probe` | `node64.hc.docker.probe` |
-| `GET /healthchecks/docker/systems` | `node64.hc.docker.systems.list` |
-| `POST /healthchecks/docker/systems` | `node64.hc.docker.systems.create` |
-| `DELETE /healthchecks/docker/systems/{id}` | `node64.hc.docker.systems.delete` |
-| `GET /healthchecks/docker/systems/{id}` | `node64.hc.docker.systems.get` |
-| `PUT /healthchecks/docker/systems/{id}` | `node64.hc.docker.systems.update` |
-| `POST /healthchecks/docker/systems/{id}/ascheck-all` | `node64.hc.docker.systems.asCheckAll` |
-| `GET /healthchecks/docker/systems/{id}/resources` | `node64.hc.docker.systems.resources` |
-| `GET /healthchecks/docker/systems/{id}/series` | `node64.hc.docker.systems.series` |
-| `DELETE /healthchecks/docker/systems/{id}/settings` | `node64.hc.docker.systems.resetSettings` |
-| `GET /healthchecks/docker/systems/{id}/settings` | `node64.hc.docker.systems.settings` |
-| `PUT /healthchecks/docker/systems/{id}/settings` | `node64.hc.docker.systems.updateSettings` |
-| `POST /healthchecks/proxmox/probe` | `node64.hc.proxmox.probe` |
-| `GET /healthchecks/proxmox/systems` | `node64.hc.proxmox.systems.list` |
-| `POST /healthchecks/proxmox/systems` | `node64.hc.proxmox.systems.create` |
-| `DELETE /healthchecks/proxmox/systems/{id}` | `node64.hc.proxmox.systems.delete` |
-| `GET /healthchecks/proxmox/systems/{id}` | `node64.hc.proxmox.systems.get` |
-| `PUT /healthchecks/proxmox/systems/{id}` | `node64.hc.proxmox.systems.update` |
-| `POST /healthchecks/proxmox/systems/{id}/ascheck-all` | `node64.hc.proxmox.systems.asCheckAll` |
-| `GET /healthchecks/proxmox/systems/{id}/resources` | `node64.hc.proxmox.systems.resources` |
-| `GET /healthchecks/proxmox/systems/{id}/series` | `node64.hc.proxmox.systems.series` |
-| `DELETE /healthchecks/proxmox/systems/{id}/settings` | `node64.hc.proxmox.systems.resetSettings` |
-| `GET /healthchecks/proxmox/systems/{id}/settings` | `node64.hc.proxmox.systems.settings` |
-| `PUT /healthchecks/proxmox/systems/{id}/settings` | `node64.hc.proxmox.systems.updateSettings` |
 | `GET /honeypot/catalog` | `node64.honeypot.catalog` |
 | `POST /honeypot/cert` | `node64.honeypot.certificate` |
 | `GET /honeypot/config` | `node64.honeypot.settings` |
@@ -908,7 +899,7 @@ Allow lists with number of rules, last update and error. They apply to all devic
 func add(_ url: String, name: String? = nil) async throws -> Node64.DNS64Settings
 ```
 
-Adds an allow list (enabled). Formats: one domain per line, hosts or Adblock (`||example.com^`, `@@||example.com^`). Answers `400` if invalid or already present.
+Adds an allow list (enabled). Formats: one domain per line, hosts or Adblock (`||example.com^`, `@@||example.com^`;
 
 ### `node64.dns64.allowLists.add` `POST /dns64/allowlists`
 
@@ -1037,6 +1028,154 @@ func names() async throws -> [Node64.DNS64DeviceName]
 ```
 
 Lists the device names of the zones with their current addresses.
+
+## `node64.dns64.dhcp`
+
+DHCP server.
+
+### `node64.dns64.dhcp.status` `GET /dns64/dhcp`
+
+```swift
+func status() async throws -> JSONValue
+```
+
+Switch and state of the DHCP server: `mode`, `role`, `standby` (networks where a reserve node stays silent), `conflicts` (network to other primary nodes serving it), `running`, `docker_bridge` and `state` with networks (usage, errors, leases), recent requests, foreign DHCP servers and counters.
+
+### `node64.dns64.dhcp.setMode` `PUT /dns64/dhcp/mode`
+
+```swift
+func setMode(_ mode: Node64.DNS64DHCPMode) async throws -> JSONValue
+```
+
+Switches the DHCP server on this node (never cluster-wide). Answers `400` if invalid or for a Docker bridge network.
+
+### `node64.dns64.dhcp.setRole` `PUT /dns64/dhcp/role`
+
+```swift
+func setRole(_ role: Node64.DNS64DHCPRole) async throws -> JSONValue
+```
+
+Sets the role of this node in the cluster (per node). A `primary` hands out addresses; a `reserve` only answers if no node with the cluster scope "DHCP networks" is reachable and none answered as DHCP server in the last 3 minutes.
+
+### `node64.dns64.dhcp.releaseLease` `DELETE /dns64/dhcp/leases/{scope}/{mac}`
+
+```swift
+func releaseLease(scope: Int, mac: String) async throws
+```
+
+Releases an assigned address (lease).
+
+### `node64.dns64.dhcp.ipv6` `GET /dns64/dhcp/ipv6`
+
+```swift
+func ipv6() async throws -> Node64.DNS64DHCPIPv6State
+```
+
+IPv6 DNS via Router Advertisement: settings and state. Per node, never cluster-wide. The node announces itself only as DNS server (RDNSS/DNSSL, router lifetime 0, no prefixes);
+
+### `node64.dns64.dhcp.updateIPv6` `PUT /dns64/dhcp/ipv6`
+
+```swift
+func updateIPv6(_ input: Node64.DNS64DHCPIPv6Input) async throws -> JSONValue
+```
+
+Configures IPv6 DNS via Router Advertisement. Turning it on needs at least one (at most 8) interface and host networking; the ULA address of the interface is announced, otherwise the global one. Fields left `nil` are not sent. Answers `400` if invalid.
+
+### `node64.dns64.dhcp.probeIPv6` `POST /dns64/dhcp/ipv6/probe`
+
+```swift
+func probeIPv6() async throws -> Node64.DNS64DHCPIPv6Probe
+```
+
+Asks the network for routers (Router Solicitation, takes 3 s), on the selected interfaces, otherwise on all with IPv6.
+
+## `node64.dns64.dhcp.reservations`
+
+Fixed addresses.
+
+### `node64.dns64.dhcp.reservations.list` `GET /dns64/dhcp/reservations`
+
+```swift
+func list() async throws -> [Node64.DNS64DHCPReservation]
+```
+
+Fixed DHCP addresses.
+
+### `node64.dns64.dhcp.reservations.create` `POST /dns64/dhcp/reservations`
+
+```swift
+func create(_ input: Node64.DNS64DHCPReservationInput) async throws -> Node64.DNS64DHCPReservation
+```
+
+Creates a fixed address. MAC and IP are unique per network. Answers `400` if invalid.
+
+### `node64.dns64.dhcp.reservations.update` `PUT /dns64/dhcp/reservations/{id}`
+
+```swift
+func update(_ id: Int, _ input: Node64.DNS64DHCPReservationInput) async throws -> Node64.DNS64DHCPReservation
+```
+
+Changes a fixed address.
+
+### `node64.dns64.dhcp.reservations.delete` `DELETE /dns64/dhcp/reservations/{id}`
+
+```swift
+func delete(_ id: Int) async throws
+```
+
+Deletes a fixed address.
+
+## `node64.dns64.dhcp.scopes`
+
+DHCP networks.
+
+### `node64.dns64.dhcp.scopes.list` `GET /dns64/dhcp/scopes`
+
+```swift
+func list() async throws -> [Node64.DNS64DHCPScope]
+```
+
+DHCP networks.
+
+### `node64.dns64.dhcp.scopes.create` `POST /dns64/dhcp/scopes`
+
+```swift
+func create(_ input: Node64.DNS64DHCPScopeInput) async throws -> Node64.DNS64DHCPScope
+```
+
+Creates a DHCP network (one per interface). New networks are turned on. Answers `400` if invalid.
+
+### `node64.dns64.dhcp.scopes.update` `PUT /dns64/dhcp/scopes/{id}`
+
+```swift
+func update(_ id: Int, _ input: Node64.DNS64DHCPScopeInput) async throws -> Node64.DNS64DHCPScope
+```
+
+Changes a DHCP network. The enabled state stays as it is and the network itself cannot be changed.
+
+### `node64.dns64.dhcp.scopes.delete` `DELETE /dns64/dhcp/scopes/{id}`
+
+```swift
+func delete(_ id: Int) async throws
+```
+
+Deletes a DHCP network together with its fixed addresses and leases.
+
+### `node64.dns64.dhcp.scopes.enable` `POST /dns64/dhcp/scopes/{id}/enable`
+
+```swift
+func enable(_ id: Int) async throws
+```
+
+Turns a DHCP network on.
+
+### `node64.dns64.dhcp.scopes.disable` `POST /dns64/dhcp/scopes/{id}/disable`
+
+```swift
+func disable(_ id: Int) async throws
+```
+
+Turns a DHCP network off.
 
 ## `node64.dns64.forwards`
 
@@ -1640,7 +1779,7 @@ Creates targets from names of the ipv64 account (see `Node64/DynDNS/accountNames
 
 ## `node64.hc`
 
-Healthchecks: checks, events, maintenance, push, channels, status pages, Docker, Proxmox.
+Healthchecks: checks, events, maintenance, push, channels, status pages.
 
 ### `node64.hc.events` `GET /events`
 
@@ -1752,7 +1891,7 @@ All checks, including those of other nodes of the account.
 func types() async throws -> [Node64.CheckType]
 ```
 
-Available check types (`http`, `keyword`, `icmp`, `tcp`, `port`, `cert`, `push`, `docker`, …).
+Available check types (`http`, `keyword`, `json`, `dns`, `icmp`, `tcp`, `port`, `cert`, `whois`, `push`). `docker` and `proxmox` no longer exist since Healthchecks 3.0.0 (moved to Monitor64; create/update answers 400).
 
 ### `node64.hc.checks.create` `POST /checks`
 
@@ -1873,126 +2012,6 @@ func onlineTest(_ check: Node64.CheckInput, token: String? = nil) async throws -
 ```
 
 Test run by ipv64 before switching a check to `online` or `both`.
-
-## `node64.hc.docker`
-
-Docker hosts and containers monitoring.
-
-### `node64.hc.docker.containers` `GET /healthchecks/docker/containers`
-
-```swift
-func containers() async throws -> Node64.DockerContainers
-```
-
-Lists all containers of the local Docker host with monitoring values and Docker checks.
-
-### `node64.hc.docker.enable` `POST /healthchecks/docker/enable`
-
-```swift
-func enable() async throws -> Node64.PVESystem
-```
-
-Sets up the local Docker socket (`NODE64_DOCKER_HOST` or `unix:///var/run/docker.sock`) as a Docker host, or switches it on again, but only if the socket answers (422 otherwise). Already set up: returned unchanged.
-
-### `node64.hc.docker.probe` `POST /healthchecks/docker/probe`
-
-```swift
-func probe(_ input: Node64.PVESystemInput, systemID: Int? = nil) async throws -> Node64.DockerProbe
-```
-
-Tests a Docker host: connection, version, containers, `/info`. Stores nothing (`generateKey` fails with 422).
-
-## `node64.hc.docker.systems`
-
-Monitored Docker hosts (`/healthchecks/docker/systems`).
-
-### `node64.hc.docker.systems.list` `GET /healthchecks/docker/systems`
-
-```swift
-func list() async throws -> [Node64.PVESystem]
-```
-
-Lists the Docker hosts of the monitoring with their state; `guests` counts the containers (without label `node64.nomonitor`).
-
-### `node64.hc.docker.systems.create` `POST /healthchecks/docker/systems`
-
-```swift
-func create(name: String? = nil, addresses: [String]? = nil, interval: Int? = nil, enabled: Bool? = nil) async throws -> Node64.PVESystem
-```
-
-Adds a Docker host.
-
-### `node64.hc.docker.systems.get` `GET /healthchecks/docker/systems/{id}`
-
-```swift
-func get(_ id: Int) async throws -> Node64.PVESystem
-```
-
-Reads a Docker host (same data as for Proxmox systems).
-
-### `node64.hc.docker.systems.update` `PUT /healthchecks/docker/systems/{id}`
-
-```swift
-func update(_ id: Int, _ input: Node64.PVESystemInput) async throws -> Node64.PVESystem
-```
-
-Changes a Docker host (name, interval, on/off); partial update, only the fields you set change.
-
-### `node64.hc.docker.systems.delete` `DELETE /healthchecks/docker/systems/{id}`
-
-```swift
-func delete(_ id: Int) async throws
-```
-
-Removes a Docker host with its settings and history.
-
-### `node64.hc.docker.systems.asCheckAll` `POST /healthchecks/docker/systems/{id}/ascheck-all`
-
-```swift
-func asCheckAll(_ id: Int, scope: Node64.PVEAsCheckScope? = nil) async throws -> Node64.PVEAsCheckAllResult
-```
-
-Adds every container of the last query (without label `node64.nomonitor`) that is not yet a check as a check of type `docker`. A second call adds nothing twice.
-
-### `node64.hc.docker.systems.resources` `GET /healthchecks/docker/systems/{id}/resources`
-
-```swift
-func resources(_ id: Int) async throws -> Node64.PVEResources
-```
-
-Returns the Docker host with the containers from the last query.
-
-### `node64.hc.docker.systems.series` `GET /healthchecks/docker/systems/{id}/series`
-
-```swift
-func series(_ id: Int, key: String, range: Node64.PVESeriesRange? = nil) async throws -> Node64.PVESeries
-```
-
-Returns the history of a container.
-
-### `node64.hc.docker.systems.settings` `GET /healthchecks/docker/systems/{id}/settings`
-
-```swift
-func settings(_ id: Int) async throws -> Node64.PVESettingsOverview
-```
-
-Returns the settings of all levels of a Docker host and the effective rules.
-
-### `node64.hc.docker.systems.updateSettings` `PUT /healthchecks/docker/systems/{id}/settings`
-
-```swift
-func updateSettings(_ id: Int, key: String? = nil, _ input: Node64.PVESettingsInput) async throws -> Node64.PVESettingsResult
-```
-
-Sets the settings of one level. Partial update: only the fields you set change (`Node64/PVEExpectRunning/automatic` explicitly sends `null`).
-
-### `node64.hc.docker.systems.resetSettings` `DELETE /healthchecks/docker/systems/{id}/settings`
-
-```swift
-func resetSettings(_ id: Int, key: String? = nil) async throws
-```
-
-Resets a level to "inherit everything". A check created with `asCheck` stays.
 
 ## `node64.hc.ipv64Channels`
 
@@ -2174,110 +2193,6 @@ func run(_ token: String) async throws
 
 Measures an online check now (API mode).
 
-## `node64.hc.proxmox`
-
-Proxmox VE systems monitoring.
-
-### `node64.hc.proxmox.probe` `POST /healthchecks/proxmox/probe`
-
-```swift
-func probe(_ input: Node64.PVESystemInput, systemID: Int? = nil) async throws -> Node64.PVEProbe
-```
-
-Tests a connection: fetches certificate fingerprint, version, cluster, nodes and guests.
-
-## `node64.hc.proxmox.systems`
-
-Monitored Proxmox systems (`/healthchecks/proxmox/systems`).
-
-### `node64.hc.proxmox.systems.list` `GET /healthchecks/proxmox/systems`
-
-```swift
-func list(kind: Node64.PVEKindFilter? = nil) async throws -> [Node64.PVESystem]
-```
-
-Lists Proxmox systems with the state of the last query (without secret).
-
-### `node64.hc.proxmox.systems.create` `POST /healthchecks/proxmox/systems`
-
-```swift
-func create(_ input: Node64.PVESystemInput) async throws -> Node64.PVESystem
-```
-
-Adds a Proxmox system and starts querying it immediately (if enabled).
-
-### `node64.hc.proxmox.systems.get` `GET /healthchecks/proxmox/systems/{id}`
-
-```swift
-func get(_ id: Int) async throws -> Node64.PVESystem
-```
-
-Reads a Proxmox system.
-
-### `node64.hc.proxmox.systems.update` `PUT /healthchecks/proxmox/systems/{id}`
-
-```swift
-func update(_ id: Int, _ input: Node64.PVESystemInput) async throws -> Node64.PVESystem
-```
-
-Changes a Proxmox system; partial update, an empty secret keeps the stored one.
-
-### `node64.hc.proxmox.systems.delete` `DELETE /healthchecks/proxmox/systems/{id}`
-
-```swift
-func delete(_ id: Int) async throws
-```
-
-Deletes a Proxmox system with its settings, history and the checks created with `asCheck`.
-
-### `node64.hc.proxmox.systems.asCheckAll` `POST /healthchecks/proxmox/systems/{id}/ascheck-all`
-
-```swift
-func asCheckAll(_ id: Int, scope: Node64.PVEAsCheckScope? = nil) async throws -> Node64.PVEAsCheckAllResult
-```
-
-Adds every guest (or, with `scope: .nodes`, every node) of the last query that is not yet a check as a check (without templates). Already monitored entries stay; a second call adds nothing twice.
-
-### `node64.hc.proxmox.systems.resources` `GET /healthchecks/proxmox/systems/{id}/resources`
-
-```swift
-func resources(_ id: Int) async throws -> Node64.PVEResources
-```
-
-Returns the system with its nodes and guests from the last query.
-
-### `node64.hc.proxmox.systems.series` `GET /healthchecks/proxmox/systems/{id}/series`
-
-```swift
-func series(_ id: Int, key: String, range: Node64.PVESeriesRange? = nil) async throws -> Node64.PVESeries
-```
-
-Returns the history of a node or guest.
-
-### `node64.hc.proxmox.systems.settings` `GET /healthchecks/proxmox/systems/{id}/settings`
-
-```swift
-func settings(_ id: Int) async throws -> Node64.PVESettingsOverview
-```
-
-Returns the settings of all levels and the effective rules.
-
-### `node64.hc.proxmox.systems.updateSettings` `PUT /healthchecks/proxmox/systems/{id}/settings`
-
-```swift
-func updateSettings(_ id: Int, key: String? = nil, _ input: Node64.PVESettingsInput) async throws -> Node64.PVESettingsResult
-```
-
-Sets the settings of one level. Partial update: only the fields you set change (`Node64/PVEExpectRunning/automatic` explicitly sends `null`).
-
-### `node64.hc.proxmox.systems.resetSettings` `DELETE /healthchecks/proxmox/systems/{id}/settings`
-
-```swift
-func resetSettings(_ id: Int, key: String? = nil) async throws
-```
-
-Resets a level to "inherit everything". A check created with `asCheck` stays.
-
 ## `node64.hc.statusPages`
 
 Public status pages, their notices and logos.
@@ -2352,7 +2267,7 @@ Removes the logo of a status page.
 func addItems(_ id: Int, _ input: Node64.StatusPageItemsInput) async throws -> Node64.StatusPage
 ```
 
-Adds entries to a group of a status page: checks by token, and Proxmox nodes, guests or Docker containers by resource. A missing check of a resource is created as with "as check". Existing entries stay (not duplicated). Fails with 422 on invalid input.
+Adds entries to a group of a status page: checks by token. Existing entries stay (not duplicated). Fails with 422 on invalid input, and since Healthchecks 3.0.0 also for the removed `resources` (Proxmox/Docker).
 
 ## `node64.hc.statusPages.notices`
 

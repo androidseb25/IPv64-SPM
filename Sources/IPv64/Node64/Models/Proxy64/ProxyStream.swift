@@ -61,6 +61,8 @@ extension Node64 {
         public let bwDownMbit: Int?
         /// Bandwidth from the visitor in Mbit/s; `0` = unlimited.
         public let bwUpMbit: Int?
+        /// TCP only: PROXY protocol header to the target (`""` = off); sent before all data, only enable if the target expects it. UDP-only streams answer 422; changing it does not restart the stream.
+        public let proxyProtocol: ProxyProtocolVersion?
 
         enum CodingKeys: String, CodingKey {
             case id, name, enabled
@@ -79,6 +81,7 @@ extension Node64 {
             case geoCountries = "geo_countries"
             case bwDownMbit = "bw_down_mbit"
             case bwUpMbit = "bw_up_mbit"
+            case proxyProtocol = "proxy_protocol"
         }
     }
 
@@ -110,6 +113,8 @@ extension Node64 {
         public var bwUpMbit: Int?
         /// Port mapper: expose the port via CDN64 under this name (mode 3); `""` = local only.
         public var onlineName: String?
+        /// TCP only: PROXY protocol header to the target (`""` = off); sent before all data, only enable if the target expects it. UDP-only streams answer 422; changing it does not restart the stream.
+        public var proxyProtocol: ProxyProtocolVersion?
 
         /// Creates a stream input; pass only the fields you want to set.
         public init(
@@ -125,8 +130,10 @@ extension Node64 {
             geoCountries: [String]? = nil,
             bwDownMbit: Int? = nil,
             bwUpMbit: Int? = nil,
-            onlineName: String? = nil
+            onlineName: String? = nil,
+            proxyProtocol: ProxyProtocolVersion? = nil
         ) {
+            self.proxyProtocol = proxyProtocol
             self.name = name
             self.enabled = enabled
             self.listenPort = listenPort
@@ -154,6 +161,7 @@ extension Node64 {
             case bwDownMbit = "bw_down_mbit"
             case bwUpMbit = "bw_up_mbit"
             case onlineName = "online_name"
+            case proxyProtocol = "proxy_protocol"
         }
     }
 }

@@ -32,7 +32,7 @@ extension Node64.HC.Checks {
         ]))
     }
 
-    /// Available check types (`http`, `keyword`, `icmp`, `tcp`, `port`, `cert`, `push`, `docker`, …).
+    /// Available check types (`http`, `keyword`, `json`, `dns`, `icmp`, `tcp`, `port`, `cert`, `whois`, `push`). `docker` and `proxmox` no longer exist since Healthchecks 3.0.0 (moved to Monitor64; create/update answers 400).
     ///
     /// The spec documents no response schema, only "list of types". A JSON array of strings, or of
     /// objects with a `type`, `name` or `id` string, is mapped to ``Node64/CheckType`` values; an object
@@ -83,7 +83,7 @@ extension Node64.HC.Checks {
     /// **A `nil` `description` clears the stored description** – send the current one to keep it.
     /// Omitted `params`, `tags`, `channels`, `locations`, `nodes` and all number and switch
     /// fields stay unchanged. Also works for checks of other nodes (`owner: other`); the owner node
-    /// and the measuring point of a Docker check stay. The spec documents no response body.
+    /// stay. The spec documents no response body.
     ///
     /// `PUT /checks/{token}`
     @discardableResult

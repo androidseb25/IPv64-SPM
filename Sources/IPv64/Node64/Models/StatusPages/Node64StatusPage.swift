@@ -267,36 +267,15 @@ extension Node64 {
         public var groupID: Int?
         /// Check tokens.
         public var tokens: [String]?
-        /// Proxmox nodes, guests or Docker containers.
-        public var resources: [Resource]?
 
-        /// A system resource.
-        public struct Resource: Encodable, Hashable, Sendable {
-            /// ID of the Proxmox or Docker system.
-            public var systemID: Int?
-            /// `node/<name>`, `qemu/<vmid>`, `lxc/<vmid>` or `docker/<name>`.
-            public var key: String?
-
-            public init(systemID: Int? = nil, key: String? = nil) {
-                self.systemID = systemID
-                self.key = key
-            }
-
-            enum CodingKeys: String, CodingKey {
-                case systemID = "system_id"
-                case key
-            }
-        }
-
-        public init(groupID: Int? = nil, tokens: [String]? = nil, resources: [Resource]? = nil) {
+        public init(groupID: Int? = nil, tokens: [String]? = nil) {
             self.groupID = groupID
             self.tokens = tokens
-            self.resources = resources
         }
 
         enum CodingKeys: String, CodingKey {
             case groupID = "group_id"
-            case tokens, resources
+            case tokens
         }
     }
 }
