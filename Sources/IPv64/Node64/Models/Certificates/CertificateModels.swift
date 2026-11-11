@@ -137,7 +137,7 @@ extension Node64 {
     /// Body of ``Node64/Certificates/create(_:)``.
     ///
     /// Which fields apply depends on ``source``: `alias` needs `aliasZone` and `aliasPrefix`,
-    /// `dns` needs `dnsAccount`, `ca` needs `caID` (and `days`), `self` uses `days` and `keyType`.
+    /// `dns` needs `dnsAccount`, `ca` needs `caID` (and `days`), `self` uses `days` and `keyType` (as do the Let's Encrypt sources, for `keyType`).
     public struct CertificateCreateInput: Encodable, Hashable, Sendable {
         /// DNS names or IP addresses.
         public var names: [String]
@@ -159,7 +159,8 @@ extension Node64 {
         public var days: Int?
         /// Further ACME authority instead of Let's Encrypt (`0`).
         public var acmeCA: Int?
-        /// Key type (source `self`); default ECDSA.
+        /// Key type for source `self` and the Let's Encrypt sources `ipv64`, `alias`, `http`, `dns`: ECDSA P-256 or RSA 2048
+        /// (e.g. for older devices like DSM 6); otherwise ignored. Default ECDSA.
         public var keyType: CertificateKeyType?
 
         /// Creates a certificate request; optional fields left `nil` are not sent.

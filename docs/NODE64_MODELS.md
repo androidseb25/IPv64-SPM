@@ -155,6 +155,7 @@ Advanced settings of a proxy host. Schema `CDNAdvanced`.
 - `trustedProxies: [String]?` – Trusted proxy addresses or networks.
 - `accessLog: Bool?` – Write an access log.
 - `noLimits: Bool?` – Disables the per-IP request limit and per-target limit (connection limits and bans still apply).
+- `noProbe: Bool?` – Do not check the target for reachability (proxy hosts, TLS passthrough), e.g. for services without a web UI: no "unreachable" display, no `node64_cdn64_host_target_up` metric.
 - `geoMode: CDNGeoMode?` – Country filter mode.
 - `geoCountries: [String]?` – ISO country codes, at most 60 (e.g. `["DE", "AT"]`).
 - `aiBots: Bool?` – Reject AI bots (403) by user agent. Proxy, redirect and status hosts only.
@@ -668,7 +669,7 @@ Body of `Node64/Certificates/create(_:)`.
 - `caID: Int?` – Own CA (source `ca`).
 - `days: Int?` – Validity in days (sources `ca`, `self`); default 397, at most 825.
 - `acmeCA: Int?` – Further ACME authority instead of Let's Encrypt (`0`).
-- `keyType: CertificateKeyType?` – Key type (source `self`); default ECDSA.
+- `keyType: CertificateKeyType?` – Key type for source `self` and the Let's Encrypt sources `ipv64`, `alias`, `http`, `dns`: ECDSA P-256 or RSA 2048 (e.g. for older devices like DSM 6); otherwise ignored. Default ECDSA.
 
 ## `Node64.CertificateKeyType` (open enum)
 
@@ -3134,6 +3135,1419 @@ State of a module of the node.
 - `changelog: JSONValue?` – Changelog (Markdown), only with `Node64/Node/Modules/list(changelog:)` and `changelog: true`.
 - `id: String`
 
+## `Node64.Monitor64Access` (struct)
+
+Access of a host without its secret.
+
+- `uid: String` – UID of the access.
+- `type: Monitor64AccessType?` – Access type.
+- `config: Monitor64AccessConfig?` – Configuration.
+- `hostkey: String?` – Remembered SSH host key (fingerprint).
+- `enabled: Bool?` – Access is switched on.
+- `secretSet: Bool?` – A secret is stored (the secret itself is never returned).
+
+## `Node64.Monitor64AccessConfig` (struct)
+
+Configuration of an access without secrets. It is checked strictly (unknown fields and fields of another access type give `400`). SNMP fields only for `snmp`, `metrics` only for `prom`. The same type is used in responses and requests; `nil` fields are not sent.
+
+- `port: Int?` – Port (0 = default of the access type).
+- `user: String?` – User (SSH and agent `^[A-Za-z0-9._-]{0,32}$`; SNMPv3 at most 32 characters; otherwise up to 128 characters, also user@domain).
+- `smart: Bool?` – SSH: SMART via sudo smartctl.
+- `url: String?` – Address of the interface (at most 512 characters): http(s)://; Docker also unix://, tcp://, ssh://; TrueNAS and Redfish https:// only; NUT host[:3493] or nut://; Prometheus URL of the exporter; not allowed for SNMP.
+- `tokenID: String?` – Token ID (e.g. Proxmox `user@realm!token`).
+- `node: String?` – Node name (Proxmox VE).
+- `pin: String?` – Certificate fingerprint (SHA-256 hex) or SSH host key (`SHA256:...`, Docker ssh://).
+- `ups: String?` – NUT: UPS names, comma separated (empty = all).
+- `tls: Monitor64AccessConfigTls?` – NUT: TLS mode.
+- `api: Monitor64AccessConfigApi?` – TrueNAS: API flavour.
+- `session: Bool?` – Redfish: session instead of basic auth.
+- `mode: Monitor64AccessConfigMode?` – Agent: pull or push.
+- `token: String?` – Agent in push mode: pointer to the access (at most 64 characters). Gives no access, so it is part of the response, but treat it like a secret.
+- `metrics: [Metric]?` – Prometheus only: own metrics (at most 50).
+- `snmpVersion: Monitor64AccessConfigSnmpVersion?` – SNMP: version.
+- `level: Monitor64AccessConfigLevel?` – SNMPv3 level.
+- `authProto: Monitor64AccessConfigAuthProto?` – SNMPv3 authentication.
+- `privProto: Monitor64AccessConfigPrivProto?` – SNMPv3 encryption.
+- `context: String?` – SNMPv3 context (usually empty).
+- `custom: [CustomOID]?` – SNMP: own OIDs.
+- `profiles: [String]?` – SNMP: fixed profiles (at most 16; empty = automatic).
+- `traps: Bool?` – SNMP: accept traps of this host.
+- `trapEngineID: String?` – SNMPv3: engine ID of the sender for traps (hex).
+
+## `Node64.Monitor64AccessConfig.CustomOID` (struct)
+
+A custom SNMP OID.
+
+- `oid: String` – OID.
+- `name: String` – Name.
+- `unit: String?` – Unit.
+- `factor: Double?` – Factor (0 = 1).
+- `counter: Bool?` – Counter: rate per second times factor.
+- `rule: String?` – Rule kind for thresholds, e.g. `temp.system`.
+
+## `Node64.Monitor64AccessConfig.Metric` (struct)
+
+A custom Prometheus metric.
+
+- `name: String` – Metric name, e.g. `nginx_connections_active`.
+- `labels: [String: String]?` – Labels that must match exactly (`""` = label missing or empty).
+- `title: String?` – Display name (empty = name).
+- `unit: String?` – Unit, e.g. `%`, `B`, `B/s`, `°C`, `ms`.
+- `factor: Double?` – Value times factor (0 = 1).
+- `rate: Bool?` – Counter: change per second.
+
+## `Node64.Monitor64AccessInput` (struct)
+
+Create or change an access. `secret` and `clearSecret` are write-only secrets: they are never returned (only `secretSet` on the response) and should not be logged.
+
+- `type: Monitor64AccessType?` – Access type; required when creating, empty on PUT = unchanged.
+- `config: Monitor64AccessConfig?` – Configuration. On PUT `nil` keeps the existing one (it is checked again).
+- `secret: String?` – SECRET, write-only. Token or password; Docker: TLS key, certificate and CA as PEM or the private SSH key; SNMP: JSON `{"community", "auth", "priv"}` or just the community (empty fields keep the stored value). At most 4096 bytes, Docker 64 KiB. `nil`/empty = unchanged.
+- `clearSecret: Bool?` – Remove the stored secret (write-only).
+- `newToken: Bool?` – Agent in push mode: generate a new token.
+- `hostkey: String?` – Confirmed SSH host key fingerprint (`SHA256:...`, taken while none is remembered); on PUT `reset` discards the remembered key.
+- `enabled: Bool?` – Switch the access on or off; `nil` = unchanged (new: on).
+
+## `Node64.Monitor64AccessState` (struct)
+
+Access on the host page with runtime state: all fields of `Monitor64Access` plus state.
+
+- `uid: String` – UID of the access.
+- `type: Monitor64AccessType?` – Access type.
+- `config: Monitor64AccessConfig?` – Configuration.
+- `hostkey: String?` – Remembered SSH host key.
+- `enabled: Bool?` – Switched on.
+- `secretSet: Bool?` – A secret is stored (never returned).
+- `name: String?` – Display name of the access type.
+- `ok: Bool?` – Last query succeeded.
+- `failures: Int?` – Failures in a row.
+- `error: String?` – Error.
+- `known: Bool?` – Already queried.
+- `agent: Monitor64AgentHost?` – Agent state (agent accesses only).
+
+## `Node64.Monitor64Ack` (struct)
+
+Acknowledgement.
+
+- `by: Monitor64Actor?` – Who acknowledged.
+- `at: Date?` – When.
+- `comment: String?` – Comment.
+
+## `Node64.Monitor64Actor` (struct)
+
+Who triggered a change or action.
+
+- `kind: Monitor64ActorKind?` – Person, API key or system.
+- `uid: String?` – Cluster-wide user UID (people).
+- `name: String?` – Name at the time of the action (user or name of the API key).
+- `method: String?` – Sign-in method of people (currently always `local`).
+- `ip: String?` – Address of the caller.
+
+## `Node64.Monitor64AdoptState` (enum)
+
+New state of services for `Node64/Monitor64/Hosts/adoptServices(host:keys:state:)`.
+
+- `case adopt` – Adopt (`1`).
+- `case ignore` – Ignore (`-1`).
+- `case offerAgain` – Offer as new again (`0`).
+
+## `Node64.Monitor64Agent` (struct)
+
+State of the agent distribution.
+
+- `internet: String?` – Folder of the agent files on the internet.
+- `httpPort: Int?` – HTTP port of the node (0 = off).
+- `port: Int?` – Agent port.
+- `running: Bool?` – Module runs.
+- `version: String?` – Current version.
+- `date: String?` – Date of the version.
+- `source: Source?` – Source of the signed directory.
+- `due: Bool?` – Directory should be fetched again.
+- `files: [Monitor64AgentFile]?` – Files.
+- `scripts: [Script]?` – Install scripts.
+- `hosts: [Monitor64AgentHost]?` – Hosts with their agent state.
+- `events: [Event]?` – Recent agent events.
+- `publicKey: String?` – Public key.
+- `fingerprint: String?` – Fingerprint.
+
+## `Node64.Monitor64Agent.Event` (struct)
+
+Entry of the agent timeline: an event plus the host.
+
+- `at: Date?` – Time.
+- `kind: String?` – Kind.
+- `text: String?` – Text.
+- `actor: Monitor64Actor?` – Actor.
+- `hostUID: String?` – Host UID.
+- `key: String?` – Service key.
+- `problem: String?` – Problem UID.
+- `host: String?` – Name of the host.
+
+## `Node64.Monitor64Agent.Script` (struct)
+
+Install script.
+
+- `name: String?` – Name.
+- `size: Int?` – Size in bytes.
+- `sha256: String?` – SHA-256.
+
+## `Node64.Monitor64Agent.Source` (struct)
+
+Source of the signed directory.
+
+- `bases: [String]?` – Base URLs.
+- `source: String?` – Source in use.
+- `checked: Date?` – Last check.
+- `ok: Date?` – Last success.
+- `error: String?` – Last error.
+
+## `Node64.Monitor64AgentAutoupdate` (struct)
+
+Automatic agent updates of a host.
+
+- `uid: String?` – Host UID.
+- `autoupdate: Bool?` – Automatic updates on.
+
+## `Node64.Monitor64AgentFile` (struct)
+
+Agent file for one platform.
+
+- `name: String?` – File name.
+- `os: String?` – Operating system.
+- `arch: String?` – Architecture.
+- `size: Int?` – Size in bytes.
+- `sha256: String?` – SHA-256.
+- `key: String?` – Platform key, e.g. `linux-amd64`.
+- `cached: Bool?` – Verified copy lies on the node.
+
+## `Node64.Monitor64AgentHost` (struct)
+
+Agent state of a host.
+
+- `uid: String?` – Host UID.
+- `name: String?` – Name of the host.
+- `access: String?` – UID of the agent access.
+- `push: Bool?` – Push mode.
+- `version: String?` – Agent version.
+- `platform: String?` – Platform, e.g. `linux-amd64`.
+- `auto: Bool?` – Automatic updates.
+- `state: Monitor64AgentHostState?` – Update state.
+- `busy: Bool?` – An update runs or waits for a free slot.
+- `error: String?` – Error of the last attempt.
+- `tried: Date?` – Last attempt.
+- `next: Date?` – Next automatic attempt.
+- `node: String?` – For `elsewhere`: responsible node.
+- `latest: String?` – Available version.
+- `disabled: Bool?` – Access is switched off.
+
+## `Node64.Monitor64AgentUpdateStarted` (struct)
+
+Answer of starting an agent update (`202`).
+
+- `ok: Bool?`
+- `version: String?` – Target version.
+
+## `Node64.Monitor64Channel` (struct)
+
+A notification channel of the node (without configuration and secrets).
+
+- `id: Int?` – Channel ID.
+- `type: String?` – Channel type.
+- `name: String?` – Name.
+- `enabled: Bool?` – Switched on.
+- `isDefault: Bool?` – Default channel.
+
+## `Node64.Monitor64ChannelRoute` (struct)
+
+A channel with severity; entries with neither `warn` nor `crit` are dropped.
+
+- `id: String`
+- `warn: Bool?` – Report on warning.
+- `crit: Bool?` – Report on critical.
+
+## `Node64.Monitor64Cluster` (struct)
+
+Cluster overview (`GET /monitor64/cluster`). Schema `Monitor64Cluster`.
+
+- `active: Bool?` – Cluster mode is active.
+- `isSelf: String?` – ID of this node.
+- `majority: Bool?` – A majority of nodes is connected.
+- `total: Int?` – Number of nodes.
+- `connected: Int?` – Number of connected nodes.
+- `nodes: [Monitor64ClusterNode]?` – Nodes.
+- `hosts: [Monitor64ClusterHost]?` – Responsibility per host (view of this node).
+- `key: Monitor64ClusterKeys?` – Keys of this node.
+
+## `Node64.Monitor64ClusterHost` (struct)
+
+Responsibility for a host, seen from this node. Schema `Monitor64ClusterHost`.
+
+- `uid: String` – UID of the host.
+- `name: String?` – Name of the host.
+- `owner: String?` – ID of the responsible node.
+- `ownerName: String?` – Name of the responsible node.
+- `preferred: String?` – ID of the preferred node.
+- `backups: [String]?` – IDs of the backup nodes.
+- `role: Monitor64ClusterHostRole?` – View of this node.
+- `reachable: Bool?` – The responsible node is reachable.
+
+## `Node64.Monitor64ClusterHostInfo` (struct)
+
+Responsibility details of one host (`GET /monitor64/cluster/hosts/{uid}`). Schema `Monitor64ClusterHostInfo`.
+
+- `active: Bool?` – Cluster mode is active.
+- `isSelf: String?` – ID of this node.
+- `majority: Bool?` – A majority of nodes is connected.
+- `nodes: [Monitor64ClusterNode]?` – Members of the cluster.
+- `host: Monitor64ClusterHost?` – Responsibility for the host.
+- `ref: Monitor64ClusterRef?` – Which node monitors the host.
+- `events: [Monitor64Event]?` – Latest takeovers and handbacks (at most 20).
+
+## `Node64.Monitor64ClusterHostInput` (struct)
+
+Request of `Monitor64/Cluster-swift.struct/updateHost(_:_:)`.
+
+- `preferredNode: String?` – ID of the preferred node; empty = this node.
+- `backupNodes: [String]?` – IDs of the backup nodes, at most 8 (duplicates and the preferred node are dropped).
+
+## `Node64.Monitor64ClusterHostRole` (open enum)
+
+Role of this node for a host in the cluster (schema `Monitor64ClusterHost`, `role`).
+
+- `.report` = `"report"`
+- `.measure` = `"measure"`
+- `.idle` = `"idle"`
+
+## `Node64.Monitor64ClusterHostUpdate` (struct)
+
+Result of `Monitor64/Cluster-swift.struct/updateHost(_:_:)` (inline schema).
+
+- `uid: String?` – UID of the host.
+- `preferredNode: String?` – ID of the preferred node.
+- `backupNodes: [String]?` – IDs of the backup nodes.
+
+## `Node64.Monitor64ClusterKeys` (struct)
+
+Keys of this node, without the private key. Schema `Monitor64ClusterKeys`.
+
+- `fingerprint: String?` – Fingerprint of the current key.
+- `authorizedKey: String?` – Line for `authorized_keys` or the install command (public key).
+- `cluster: Bool?` – Shared cluster key.
+- `at: Date?` – Creation time of the key.
+- `oldKeys: [String]?` – Fingerprints of old keys that are still offered.
+- `pending: [Pending]?` – Accesses not yet converted.
+- `running: Bool?` – A conversion runs in the background; query again.
+
+## `Node64.Monitor64ClusterKeys.Pending` (struct)
+
+A not yet converted access.
+
+- `accessUID: String?` – UID of the access.
+- `hostUID: String?` – UID of the host.
+- `hostName: String?` – Name of the host.
+- `type: String?` – Access type.
+- `tries: Int?` – Number of attempts.
+- `lastTry: Date?` – Time of the last attempt.
+- `error: String?` – Last error.
+- `manual: Bool?` – SSH: add the line by hand, then confirm.
+
+## `Node64.Monitor64ClusterNode` (struct)
+
+A node of the cluster. Schema `Monitor64ClusterNode`.
+
+- `id: String?` – ID of the node.
+- `name: String?` – Name of the node.
+- `isSelf: Bool?` – This is the node you talk to.
+- `online: Bool?` – The node is online.
+- `stable: Bool?` – Reachable for 5 minutes (may become responsible).
+
+## `Node64.Monitor64ClusterReach` (struct)
+
+Reachability test of a host from all nodes. Schema `Monitor64ClusterReach`.
+
+- `nodes: [NodeResult]?` – Results per node, this node first.
+
+## `Node64.Monitor64ClusterReach.NodeResult` (struct)
+
+Result of one node.
+
+- `node: String?` – ID of the node.
+- `name: String?` – Name of the node.
+- `isSelf: Bool?` – This is the node you talk to.
+- `ok: Bool?` – All tested accesses answer.
+- `error: String?` – Error message.
+- `accesses: [AccessResult]?` – Tested accesses.
+
+## `Node64.Monitor64ClusterReach.NodeResult.AccessResult` (struct)
+
+Result of one access.
+
+- `access: String?` – UID of the access.
+- `type: String?` – Access type.
+- `ok: Bool?` – The access answers.
+- `error: String?` – Error message.
+- `ms: Int?` – Response time in milliseconds.
+- `skip: Bool?` – Push mode: only the agent's own node tests.
+
+## `Node64.Monitor64ClusterRef` (struct)
+
+Which node monitors a host. Schema `Monitor64ClusterRef`.
+
+- `node: String?` – ID of the node.
+- `name: String?` – Name of the node.
+- `here: Bool?` – This node queries the host.
+- `reporting: Bool?` – The monitoring node reports.
+- `reachable: Bool?` – The monitoring node is reachable.
+- `note: String?`
+- `at: Date?` – State of the other node.
+
+## `Node64.Monitor64ClusterViews` (struct)
+
+Which node monitors which host (`GET /monitor64/cluster/views`). Schema `Monitor64ClusterViews`.
+
+- `active: Bool?` – Cluster mode is active.
+- `isSelf: String?` – ID of this node.
+- `selfName: String?` – Name of this node.
+- `refs: [String: Monitor64ClusterRef]?` – Host UID to the monitoring node.
+- `orphans: [Monitor64Orphan]?` – Orphaned hosts (only without `host`).
+
+## `Node64.Monitor64DiscoveredService` (struct)
+
+Discovered service (result of a connection test). Also used when creating a host.
+
+- `key: String` – Key of the service (at most 200 characters).
+- `name: String?` – Display name (at most 200 characters).
+- `kind: String?` – Kind, e.g. `cpu`, `mem`, `fs`, `disk`, `if`, `vm`, `ctr` (at most 32 characters).
+- `isDefault: Bool?` – Offered by default.
+
+## `Node64.Monitor64DiscoverResult` (struct)
+
+Result of a discovery round.
+
+- `added: Int?` – Newly entered services.
+- `new: Int?` – New services not adopted yet (total).
+- `vanished: Int?` – Vanished services.
+
+## `Node64.Monitor64Effect` (struct)
+
+Effect of an override on the current state (without duration and hysteresis).
+
+- `services: Int?` – Affected services.
+- `hosts: [String]?` – Names of the affected hosts.
+- `own: [String]?` – Hosts where the threshold is set directly.
+- `shadow: [String: [String]]?` – Index of an override above it to hosts where it wins.
+- `before: Thresholds?` – Thresholds before.
+- `after: Thresholds?` – Thresholds after.
+
+## `Node64.Monitor64Effect.Thresholds` (struct)
+
+Warning and critical threshold.
+
+- `warn: Int?` – Warning.
+- `crit: Int?` – Critical.
+
+## `Node64.Monitor64Effective` (struct)
+
+Effective threshold after resolving all levels.
+
+- `kind: String?` – Rule kind.
+- `known: Bool?` – Kind is in the default table.
+- `isState: Bool?` – State rule (severity instead of numbers).
+- `warn: Monitor64Limit?` – Warning.
+- `crit: Monitor64Limit?` – Critical.
+- `warnFree: Monitor64Limit?` – Warning GB free.
+- `critFree: Monitor64Limit?` – Critical GB free.
+- `dir: Monitor64RuleDir?` – Direction.
+- `forSeconds: Int?` – Seconds.
+- `hyst: Double?` – Hysteresis.
+- `mode: Monitor64RuleMode?` – Mode.
+- `report: Monitor64RuleReport?` – Report.
+- `severity: Monitor64RuleSeverity?` – Severity.
+- `origin: [String: Monitor64EffectiveOrigin]?` – Field to level the value comes from.
+- `override: Int?` – Index of the effective deviation, -1 = none.
+- `overrideID: String?` – UID of the effective deviation.
+
+## `Node64.Monitor64Event` (struct)
+
+Entry in the timeline of a problem.
+
+- `at: Date?` – Time of the entry.
+- `kind: String?` – Kind, e.g. a state (`warn`, `crit`, ...), `ok`, `ack`, `unack`, `comment`, `resolved`, `bell`, `maint`, `maint_end`, `pause`, `resume`, `takeover`, `handover`, `agent_update`.
+- `text: String?` – Text.
+- `actor: Monitor64Actor?` – Who caused it.
+- `hostUID: String?` – UID of the host.
+- `key: String?` – Key of the service.
+- `problem: String?` – UID of the problem.
+
+## `Node64.Monitor64Host` (struct)
+
+A host.
+
+- `uid: String` – UID of the host.
+- `name: String?` – Name.
+- `address: String?` – Hostname, IPv4 or IPv6 (without brackets).
+- `kind: Monitor64HostKind?` – Kind of the host.
+- `group: String?` – Group.
+- `tags: [String]?` – Tags (lower case).
+- `intervalSec: Int?` – Query interval in seconds (30 to 900).
+- `ownerNode: String?` – Cluster: responsible node.
+- `preferredNode: String?` – Cluster: preferred node.
+- `backupNodes: [String]?` – Cluster: substitute nodes.
+- `agentAutoupdate: Bool?` – Update the agent automatically.
+- `paused: Bool?` – Queries are paused.
+- `notes: String?` – Notes.
+- `createdAt: Date?` – Created.
+- `updatedAt: Date?` – Last changed.
+
+## `Node64.Monitor64HostCreate` (struct)
+
+Creates a host with accesses (all fields on one level): the fields of `Monitor64HostInput` plus accesses and discovered services.
+
+- `name: String` – Required; at most 100 characters (control characters removed).
+- `address: String` – Required; hostname, IPv4 or IPv6 (square brackets are removed).
+- `kind: Monitor64HostKind?` – Kind; empty = none (create) or unchanged (update).
+- `group: String?` – Group (at most 64 characters; empty = none).
+- `tags: [String]?` – Tags, lower-cased; duplicates and empty ones are dropped (at most 32).
+- `intervalSec: Int?` – Interval in seconds; 0 = default from the settings (create) or unchanged (update); clamped to 30 to 900.
+- `notes: String?` – Notes (at most 1000 characters).
+- `paused: Bool?` – Pause queries.
+- `agentAutoupdate: Bool?` – Update the agent automatically; `nil` = unchanged (new: on).
+- `accesses: [Monitor64AccessInput]?` – Accesses (at most 8).
+- `services: [Monitor64DiscoveredService]?` – Discovered services from the connection test (entered as new; at most 5000).
+- `adopt: [String]?` – Keys of services to adopt immediately.
+
+## `Node64.Monitor64HostDeleted` (struct)
+
+Answer of deleting a host.
+
+- `ok: Bool?`
+- `seriesDeleted: Int?` – Deleted series.
+
+## `Node64.Monitor64HostDetail` (struct)
+
+Host with services, accesses (without secrets), new and ignored services.
+
+- `host: Monitor64Host?` – Host.
+- `icon: String?` – Icon.
+- `state: Monitor64State?` – State.
+- `view: Monitor64View?` – View.
+- `checked: Date?` – Last round.
+- `maint: Monitor64Window?` – Effective maintenance.
+- `unreach: String?` – Error when unreachable.
+- `services: [Monitor64HostService]?` – Services.
+- `accesses: [Monitor64AccessState]?` – Accesses.
+- `new: [Monitor64ServiceRow]?` – Newly detected, not yet adopted services.
+- `ignored: [Monitor64ServiceRow]?` – Ignored services.
+- `charts: [Chart]?` – Charts of the host page.
+- `running: Bool?` – Module runs.
+
+## `Node64.Monitor64HostDetail.Chart` (struct)
+
+Chart of the host page.
+
+- `id: Monitor64HostDetailChartID?` – Chart.
+- `unit: String?` – Unit.
+- `max: Double?` – Maximum.
+- `series: [Series]?` – Series.
+- `warn: Double?` – Warning line.
+- `crit: Double?` – Critical line.
+
+## `Node64.Monitor64HostDetail.Chart.Series` (struct)
+
+Series of a chart.
+
+- `label: String?` – Label.
+- `svc: String?` – Service key.
+- `metric: String?` – Metric.
+
+## `Node64.Monitor64HostInput` (struct)
+
+Fields of a host. `PUT` replaces all fields; only `kind`, `intervalSec` and `agentAutoupdate` stay when empty, 0 or `nil`.
+
+- `name: String` – Required; at most 100 characters (control characters removed).
+- `address: String` – Required; hostname, IPv4 or IPv6 (square brackets are removed).
+- `kind: Monitor64HostKind?` – Kind; empty = none (create) or unchanged (update).
+- `group: String?` – Group (at most 64 characters; empty = none).
+- `tags: [String]?` – Tags, lower-cased; duplicates and empty ones are dropped (at most 32).
+- `intervalSec: Int?` – Interval in seconds; 0 = default from the settings (create) or unchanged (update); clamped to 30 to 900.
+- `notes: String?` – Notes (at most 1000 characters).
+- `paused: Bool?` – Pause queries.
+- `agentAutoupdate: Bool?` – Update the agent automatically; `nil` = unchanged (new: on).
+
+## `Node64.Monitor64HostService` (struct)
+
+Service on the host page: all fields of `Monitor64Service` plus category, problem and thresholds.
+
+- `key: String?` – Key.
+- `name: String?` – Name.
+- `kind: String?` – Kind.
+- `state: Monitor64State?` – State.
+- `text: String?` – Text.
+- `cause: String?` – Cause.
+- `via: String?` – Access it comes from.
+- `adopted: Int?`
+- `vanished: Bool?` – Vanished.
+- `showOnly: Bool?` – Display only.
+- `acked: Bool?` – Acknowledged.
+- `metrics: [Monitor64Metric]?` – Measured values.
+- `category: Monitor64HostServiceCategory?` – Category.
+- `since: Date?` – Problem open since.
+- `ack: Monitor64Ack?` – Acknowledgement.
+- `customName: String?` – Own display name.
+- `soll: String?` – Wanted state.
+- `report: String?` – Report mode.
+- `guest: Bool?` – Guest or container with wanted state.
+- `primary: Int?` – Index of the first metric with a threshold (-1 = none).
+- `levels: Monitor64Levels?` – Levels.
+- `rules: [Monitor64Levels]?` – All rule kinds of the service.
+
+## `Node64.Monitor64HostTraps` (struct)
+
+Trap state of a host (in a cluster the state of the responsible node).
+
+- `list: [Trap]?` – Traps, newest first.
+- `pending: Int?` – Open traps.
+- `total: Int?` – Total.
+- `rejected: Int?` – Rejected.
+- `rejectReason: String?` – Reason for rejection.
+- `rejectedAt: Date?` – Last rejection.
+
+## `Node64.Monitor64HostTraps.Trap` (struct)
+
+A received trap.
+
+- `time: Date?` – Time.
+- `version: String?` – SNMP version.
+- `inform: Bool?` – Inform request.
+- `user: String?` – SNMPv3 user.
+- `trapOID: String?` – Trap OID.
+- `trapName: String?` – Trap name.
+- `kind: String?` – Kind.
+- `handled: Bool?` – Known trap: immediate query only.
+- `varbinds: [Varbind]?` – Variable bindings.
+- `truncated: Bool?` – Truncated.
+
+## `Node64.Monitor64HostTraps.Varbind` (struct)
+
+Variable binding of a trap.
+
+- `oid: String?` – OID.
+- `type: String?` – Type.
+- `value: String?` – Value.
+
+## `Node64.Monitor64HostUID` (struct)
+
+Answer of creating or changing a host.
+
+- `uid: String` – UID of the host.
+
+## `Node64.Monitor64Levels` (struct)
+
+Levels of a threshold on a service.
+
+- `kind: String?` – Rule kind.
+- `metric: String?` – Metric (empty = state rule).
+- `state: Bool?` – State rule.
+- `std: Monitor64Rule?` – Default.
+- `override: Override?` – Effective deviation.
+- `hostKind: Monitor64Rule?` – This host, all services of the kind.
+- `service: Monitor64Rule?` – Only this service.
+- `eff: Monitor64Effective?` – Effective threshold.
+
+## `Node64.Monitor64Levels.Override` (struct)
+
+Effective deviation.
+
+- `index: Int?` – Index.
+- `uid: String?` – UID.
+- `targetType: Monitor64LevelsOverrideTargetType?` – Group or tag.
+- `target: String?` – Target.
+- `rule: Monitor64Rule?` – Rule.
+
+## `Node64.Monitor64Limit` (enum)
+
+Threshold: a number or `"off"` (explicitly no threshold, e.g. "critical only").
+
+- `case value(Double)` – A numeric threshold.
+- `case off` – Explicitly no threshold (`"off"`).
+
+## `Node64.Monitor64Maintenance` (struct)
+
+A maintenance window.
+
+- `uid: String?` – UID.
+- `title: String?` – Title.
+- `hosts: [String]?` – Host UIDs.
+- `groups: [String]?` – Groups.
+- `tags: [String]?` – Tags.
+- `start: Date?` – Start.
+- `end: Date?` – End.
+- `recur: Monitor64Recurrence?` – Recurrence.
+- `ended: Date?` – Ended by hand.
+- `by: Monitor64Actor?` – Who created it.
+- `at: Date?` – When it was created.
+- `changedBy: Monitor64Actor?` – Who changed it last.
+- `status: Monitor64MaintenanceStatus?` – State.
+- `running: Bool?` – Active right now.
+- `startLocal: String?` – Start in the time zone of the node (`YYYY-MM-DDTHH:MM`).
+- `endLocal: String?` – End in the time zone of the node.
+- `endedLocal: String?` – Hand-ended time in the time zone of the node.
+
+## `Node64.Monitor64MaintInput` (struct)
+
+Create or replace a maintenance window; needs at least one host, group or tag. Recurring windows apply from saving on (not retroactively).
+
+- `title: String?` – Title (at most 200 characters).
+- `hosts: [String]?` – UIDs of existing hosts.
+- `groups: [String]?` – Groups.
+- `tags: [String]?` – Tags.
+- `mode: Monitor64MaintInputMode`
+- `minutes: Int?` – now: duration in minutes (0 = until ended, at most 43200).
+- `start: String?` – plan: start `YYYY-MM-DDTHH:MM` in the time zone of the node.
+- `end: String?` – plan: end `YYYY-MM-DDTHH:MM` (after the start).
+- `days: [Int]?` – recur: weekdays, 0 = Sunday; empty = every day.
+- `from: String?` – recur: `HH:MM`.
+- `to: String?` – recur: `HH:MM` (up to 24:00).
+
+## `Node64.Monitor64MaintList` (struct)
+
+Maintenance windows and choices (`GET /monitor64/maintenance`).
+
+- `items: [Monitor64Maintenance]?` – Windows.
+- `hosts: [Host]?` – Hosts to choose from.
+- `targets: Monitor64Targets?` – Groups and tags to choose from.
+- `tz: String?` – Time zone of the node.
+- `nowLocal: String?` – Now in the time zone of the node.
+
+## `Node64.Monitor64MaintList.Host` (struct)
+
+A host to choose from.
+
+- `uid: String?` – UID.
+- `name: String?` – Name.
+- `group: String?` – Group.
+- `kind: String?` – Kind.
+
+## `Node64.Monitor64Meter` (struct)
+
+A small usage meter of a host.
+
+- `label: Monitor64MeterLabel?` – Quantity.
+- `value: Double?` – Percent.
+- `state: Monitor64State?` – State.
+
+## `Node64.Monitor64Metric` (struct)
+
+A measured value of a service.
+
+- `name: String?` – Name, e.g. `util`, `used`, `in`, `out`, `temp`.
+- `value: Double?` – Value.
+- `unit: String?` – Unit.
+- `rule: String?` – Rule kind (empty = display only).
+- `max: Double?` – Maximum, e.g. size in bytes.
+- `status: Monitor64MetricStatus?` – Evaluation.
+- `ruleKind: String?` – Rule kind.
+
+## `Node64.Monitor64MetricStatus` (struct)
+
+Evaluation of a metric.
+
+- `state: Monitor64State?` – State.
+- `level: Monitor64State?` – Result of the thresholds without unknown.
+- `since: Date?` – Since.
+- `at: Date?` – Last measurement.
+- `value: Double?` – Evaluated value (mode free: GB free).
+- `threshold: Monitor64Limit?` – Threshold.
+- `pending: Monitor64State?` – Pending state (duration running).
+- `pendingSince: Date?` – Pending since.
+- `pendingAt: Date?` – Pending last measurement.
+- `pendingLimit: Monitor64Limit?` – Pending threshold.
+
+## `Node64.Monitor64MoveDirection` (enum)
+
+Direction of moving an override (the topmost one wins).
+
+- `case up` – One place up.
+- `case down` – One place down.
+
+## `Node64.Monitor64Notify` (struct)
+
+Notification settings (`GET /monitor64/notify`).
+
+- `config: Monitor64NotifyConfig?` – Basic settings.
+- `channels: [Monitor64Channel]?` – Channels of the node.
+- `overrides: [Monitor64NotifyOverride]?` – Overrides per group or tag, topmost first.
+- `quiet: Quiet?` – Quiet hours.
+- `targets: Monitor64Targets?` – Existing groups and tags.
+
+## `Node64.Monitor64Notify.Quiet` (struct)
+
+Quiet hours from the notification settings of the node (read-only).
+
+- `enabled: Bool?` – Switched on.
+- `from: String?` – Start.
+- `to: String?` – End.
+- `days: String?` – Days.
+
+## `Node64.Monitor64NotifyConfig` (struct)
+
+Basic notification settings.
+
+- `channels: [Monitor64ChannelRoute]?` – Channels by severity. Channels without warn and crit are dropped, duplicates count once.
+- `remindWarn: Int?` – Reminder on warning in seconds (0 = never, otherwise at least 3600).
+- `remindCrit: Int?` – Reminder on critical in seconds (0 = never, otherwise at least 3600; default daily).
+- `critInQuiet: Bool?` – Report critical immediately in quiet hours too.
+
+## `Node64.Monitor64NotifyOverride` (struct)
+
+A notification override for a group or tag.
+
+- `uid: String?` – UID of the override.
+- `position: Int?` – Order (the topmost wins).
+- `targetType: Monitor64OverrideRowTargetType?` – Group or tag.
+- `target: String?` – Name of the group or tag.
+- `kind: String?` – Rule kind (thresholds only).
+- `data: JSONValue?` – Stored notification (free JSON).
+- `by: Monitor64Actor?` – Who changed it.
+- `at: Date?` – When it changed.
+- `notify: Monitor64NotifyOverrideData?` – The notification settings.
+
+## `Node64.Monitor64NotifyOverrideData` (struct)
+
+Stored notification override; missing fields inherit.
+
+- `channels: [Monitor64ChannelRoute]?` – Channels.
+- `replace: Bool?`
+- `onlyCrit: Bool?` – Report critical only.
+- `critInQuiet: Bool?` – Report critical in quiet hours.
+- `remindWarn: Int?` – Reminder on warning in seconds.
+- `remindCrit: Int?` – Reminder on critical in seconds.
+
+## `Node64.Monitor64NotifyOverrideInput` (struct)
+
+Create or replace a notification override. A `nil` field is not sent and inherits.
+
+- `targetType: Monitor64OverrideRowTargetType` – Group or tag.
+- `target: String` – Group or tag name (at most 64 characters; tags lowercase).
+- `channels: [Monitor64ChannelRoute]?` – Channels.
+- `replace: Bool?`
+- `onlyCrit: Bool?` – Report critical only.
+- `critInQuiet: Bool?` – Report critical in quiet hours.
+- `remindWarn: Int?` – Reminder on warning in seconds (0 = never, otherwise at least 3600).
+- `remindCrit: Int?` – Reminder on critical in seconds (0 = never, otherwise at least 3600).
+
+## `Node64.Monitor64NotifyTestResult` (struct)
+
+Result of the test notification.
+
+- `ok: Bool?` – Success.
+- `channels: Int?` – Number of channels.
+
+## `Node64.Monitor64Ok` (struct)
+
+Plain acknowledgement `{"ok": true}`.
+
+- `ok: Bool?` – Always `true`.
+
+## `Node64.Monitor64Orphan` (struct)
+
+An orphaned host that no node monitors. Schema `Monitor64Orphan`.
+
+- `uid: String?` – UID of the host.
+- `name: String?` – Name of the host.
+- `address: String?` – Address of the host.
+- `reason: Monitor64OrphanReason?` – Why it is orphaned.
+- `node: String?` – Previously responsible node.
+- `nodeName: String?` – Name of that node.
+
+## `Node64.Monitor64OrphanInput` (struct)
+
+Request of assigning or removing orphaned hosts: `uids` or `all` is required. Schema `Monitor64OrphanInput`.
+
+- `uids: [String]?` – UIDs of the hosts.
+- `all: Bool?` – All orphaned hosts.
+
+## `Node64.Monitor64OrphanReason` (open enum)
+
+Why a host is orphaned (schema `Monitor64Orphan`, `reason`).
+
+- `.nodeGone` = `"node_gone"`
+- `.noCandidate` = `"no_candidate"`
+
+## `Node64.Monitor64OrphanResult` (struct)
+
+Result of assigning or removing orphans. Schema `Monitor64OrphanResult`.
+
+- `done: Int?` – Number of handled hosts.
+- `orphans: [Monitor64Orphan]?` – Remaining orphaned hosts.
+
+## `Node64.Monitor64Orphans` (struct)
+
+Result of `Monitor64/Cluster-swift.struct/orphans()` (inline schema).
+
+- `active: Bool?` – Cluster mode is active.
+- `isSelf: String?` – ID of this node.
+- `orphans: [Monitor64Orphan]?` – Orphaned hosts.
+
+## `Node64.Monitor64OverrideRow` (struct)
+
+Common fields of a stored override.
+
+- `uid: String?` – UID of the override.
+- `position: Int?` – Order (the topmost wins).
+- `targetType: Monitor64OverrideRowTargetType?` – Group or tag.
+- `target: String?` – Name of the group or tag.
+- `kind: String?` – Rule kind (thresholds only).
+- `data: JSONValue?` – Stored rule or notification (free JSON).
+- `by: Monitor64Actor?` – Who changed it.
+- `at: Date?` – When it changed.
+
+## `Node64.Monitor64Overview` (struct)
+
+Overview (`GET /monitor64/overview`). Schema `Monitor64Overview`.
+
+- `counts: Counts?` – Services per state.
+- `hosts: [Monitor64OverviewHost]?` – All hosts with their current state.
+- `problems: [Monitor64OverviewProblem]?` – Open problems.
+- `recent: [Recent]?` – Recently resolved problems and maintenance (at most 8).
+- `groups: [String]?` – Host groups.
+- `unreachable: Int?` – Number of unreachable hosts.
+- `services: Int?` – Number of services.
+- `openUnacked: Int?` – Open, unacknowledged problems.
+- `running: Bool?` – The module runs (scheduler active).
+
+## `Node64.Monitor64Overview.Counts` (struct)
+
+Services per state.
+
+- `ok: Int?` – Services in state ok.
+- `warn: Int?` – Services in state warn.
+- `crit: Int?` – Services in state crit.
+- `unknown: Int?` – Services in state unknown.
+
+## `Node64.Monitor64Overview.Recent` (struct)
+
+A recently resolved problem or maintenance.
+
+- `kind: Monitor64OverviewKind?` – Kind of entry.
+- `hostUID: String?` – UID of the host.
+- `host: String?` – Name of the host.
+- `name: String?` – Name of the service.
+- `text: String?` – Text.
+- `by: Monitor64Actor?` – Who did it.
+- `at: Date?` – Time.
+
+## `Node64.Monitor64OverviewHost` (struct)
+
+Host on the overview.
+
+- `uid: String?` – UID of the host.
+- `name: String?` – Name.
+- `address: String?` – Address.
+- `kind: String?` – Kind of the host.
+- `icon: String?` – Bootstrap icon.
+- `group: String?` – Group.
+- `tags: [String]?` – Tags.
+- `state: Monitor64State?` – State.
+- `view: Monitor64View?` – View: maintenance > unreachable > worst service.
+- `problems: Int?` – Open problems.
+- `services: Int?` – Number of services.
+- `new: Int?` – Newly detected services.
+- `vanished: Int?` – Vanished services.
+- `paused: Bool?` – Queries are paused.
+- `maint: Maintenance?` – Running maintenance.
+- `unreach: String?` – Error of the accesses when unreachable.
+- `meters: [Monitor64Meter]?` – Meters.
+- `text: String?` – Text.
+- `cpu: Double?` – CPU percent.
+- `ram: Double?` – RAM percent.
+- `hasCpu: Bool?` – CPU value present.
+- `hasRam: Bool?` – RAM value present.
+- `checked: Date?` – Last round.
+
+## `Node64.Monitor64OverviewHost.Maintenance` (struct)
+
+Running maintenance.
+
+- `reason: String?` – Reason.
+- `end: Date?` – End of the maintenance.
+
+## `Node64.Monitor64OverviewKind` (open enum)
+
+Kind of an entry in the overview's "recent" list.
+
+- `.ok` = `"ok"`
+- `.resolved` = `"resolved"`
+- `.maint` = `"maint"`
+- `.maintEnd` = `"maint_end"`
+
+## `Node64.Monitor64OverviewProblem` (struct)
+
+Problem in the overview. Schema `Monitor64OverviewProblem`.
+
+- `hostUID: String?` – UID of the host.
+- `host: String?` – Name of the host.
+- `key: String?` – Service key; empty = host unreachable.
+- `name: String?` – Name of the service.
+- `state: Monitor64OverviewProblemState?` – State.
+- `detail: String?` – Detail text.
+- `since: Date?` – Since when.
+- `acked: Bool?` – Acknowledged.
+- `maint: Bool?` – In maintenance.
+- `unreach: Bool?` – Caused by an unreachable host.
+
+## `Node64.Monitor64OverviewProblemState` (open enum)
+
+State of a service (schema `Monitor64OverviewProblem`, `state`).
+
+- `.ok` = `"ok"`
+- `.warn` = `"warn"`
+- `.crit` = `"crit"`
+- `.unknown` = `"unknown"`
+
+## `Node64.Monitor64OwnRule` (struct)
+
+Thresholds set on a host.
+
+- `hostUID: String?` – UID of the host.
+- `host: String?` – Name of the host.
+- `key: String?` – Service (empty = all services of the host with this kind).
+- `name: String?` – Name of the service.
+- `kind: String?` – Rule kind.
+- `rule: Monitor64Rule?` – The rule.
+
+## `Node64.Monitor64Problem` (struct)
+
+A problem as listed: the row plus host name, service name, duration and channel names.
+
+- `uid: String?` – UID of the problem.
+- `hostUID: String?` – UID of the host.
+- `key: String?` – Service (empty = host not reachable).
+- `state: Monitor64ProblemRowState?` – Current state.
+- `worst: String?` – Worst state.
+- `opened: Date?` – When the problem opened.
+- `closed: Date?` – When it closed (`nil` while open).
+- `how: Monitor64ProblemRowHow?` – How it was closed.
+- `closedBy: Monitor64Actor?` – Who closed it.
+- `ack: Monitor64Ack?` – Acknowledgement.
+- `notified: [String]?` – IDs of the channels it was reported to (`default` = default channels).
+- `host: String?` – Name of the host (removed: its UID).
+- `hostGone: Bool?` – The host was removed.
+- `name: String?` – Name of the service.
+- `duration: Int?` – Duration in seconds (open: until now).
+- `channels: [String]?` – Names of the channels.
+
+## `Node64.Monitor64ProblemAction` (struct)
+
+Acknowledge, comment on or resolve the open problem of a host and service.
+
+- `host: String` – UID of the host.
+- `key: String?` – Service (empty or `nil` = the "not reachable" problem of the host).
+- `action: Monitor64ProblemActionAction` – The action.
+- `comment: String?` – At most 500 characters; required for `comment`.
+
+## `Node64.Monitor64ProblemDetail` (struct)
+
+A problem with its history (`GET /monitor64/problems/{uid}`).
+
+- `problem: Monitor64ProblemRow?` – The problem.
+- `events: [Monitor64Event]?` – Its history.
+- `channels: [String: String]?` – Channel ID to channel name.
+
+## `Node64.Monitor64ProblemList` (struct)
+
+Result of the problem list.
+
+- `problems: [Monitor64Problem]?` – Problems, newest first (at most 5000).
+- `people: [Monitor64Actor]?` – People involved (closing, acknowledging) for the `who` filter.
+- `counts: Counts?` – Counts in the range, without the other filters.
+
+## `Node64.Monitor64ProblemList.Counts` (struct)
+
+Counts of open and closed problems.
+
+- `open: Int?` – Open problems.
+- `closed: Int?` – Closed problems.
+
+## `Node64.Monitor64ProblemRow` (struct)
+
+A problem of a host or service.
+
+- `uid: String?` – UID of the problem.
+- `hostUID: String?` – UID of the host.
+- `key: String?` – Service (empty = host not reachable).
+- `state: Monitor64ProblemRowState?` – Current state.
+- `worst: String?` – Worst state.
+- `opened: Date?` – When the problem opened.
+- `closed: Date?` – When it closed (`nil` while open).
+- `how: Monitor64ProblemRowHow?` – How it was closed.
+- `closedBy: Monitor64Actor?` – Who closed it.
+- `ack: Monitor64Ack?` – Acknowledgement.
+- `notified: [String]?` – IDs of the channels it was reported to (`default` = default channels).
+
+## `Node64.Monitor64PushToken` (struct)
+
+New push token and the push port of the node.
+
+- `token: String?` – Token for the install command (stored only with the access; gives no access).
+- `port: Int?` – Push port of the node.
+
+## `Node64.Monitor64Recurrence` (struct)
+
+Weekly recurrence of a maintenance window.
+
+- `days: [Int]?` – Weekdays, 0 = Sunday; empty = every day.
+- `from: String?` – Start `HH:MM`.
+- `to: String?` – End `HH:MM`.
+
+## `Node64.Monitor64Rule` (struct)
+
+Rule of one level. Missing fields inherit field by field from the level below (default, deviation for group/tag, this host for all services of the kind, only this service). Number rules use `warn`/`crit` (or `warn_free`/`crit_free`), `dir`, `forSeconds`, `hyst` and `mode`; state rules use `severity` and `forSeconds`; `report` applies to both. Used as response and as input, `nil` fields are not sent.
+
+- `warn: Monitor64Limit?` – Warning threshold (percent or value).
+- `crit: Monitor64Limit?` – Critical threshold.
+- `warnFree: Monitor64Limit?` – Warning in GB free (mode `free`).
+- `critFree: Monitor64Limit?` – Critical in GB free (mode `free`).
+- `dir: Monitor64RuleDir?` – Direction.
+- `forSeconds: Int?` – Duration in seconds (0 to 31622400): all measurements in the period must be beyond the threshold.
+- `hyst: Double?` – Hysteresis in units of the value (not negative).
+- `mode: Monitor64RuleMode?` – Mode.
+- `report: Monitor64RuleReport?` – Notify or only show.
+- `severity: Monitor64RuleSeverity?` – Severity of a state rule.
+
+## `Node64.Monitor64RuleKind` (struct)
+
+A kind of rule.
+
+- `kind: String?` – The kind.
+- `group: String?`
+- `unit: String?` – Display unit.
+- `factor: Double?` – Display value = value / factor.
+- `store: Bool?` – Fill level: also "GB free".
+- `state: Bool?` – State rule.
+- `down: Bool?` – Threshold downwards.
+- `nofor: Bool?` – Without duration.
+
+## `Node64.Monitor64RuleOverride` (struct)
+
+A threshold override for a group or tag.
+
+- `uid: String?` – UID of the override.
+- `position: Int?` – Order (the topmost wins).
+- `targetType: Monitor64OverrideRowTargetType?` – Group or tag.
+- `target: String?` – Name of the group or tag.
+- `kind: String?` – Rule kind.
+- `data: JSONValue?` – Stored rule (free JSON).
+- `by: Monitor64Actor?` – Who changed it.
+- `at: Date?` – When it changed.
+- `rule: Monitor64Rule?` – The rule.
+- `effect: Monitor64Effect?` – Its effect on the current state.
+
+## `Node64.Monitor64RuleOverrideInput` (struct)
+
+Create or replace a threshold override.
+
+- `targetType: Monitor64OverrideRowTargetType` – Group or tag.
+- `target: String` – Group or tag name (at most 64 characters; tags lowercase).
+- `kind: String` – Rule kind from the default table.
+- `rule: Monitor64Rule` – The rule; needs at least one field (otherwise 400 `rule_empty`).
+
+## `Node64.Monitor64Rules` (struct)
+
+Thresholds (`GET /monitor64/rules`).
+
+- `kinds: [Monitor64RuleKind]?` – Rule kinds.
+- `defaults: [String: Monitor64Rule]?` – Built-in default per kind.
+- `std: [String: Monitor64Rule]?` – Effective default table (built-in plus changes).
+- `overrides: [Monitor64RuleOverride]?` – Overrides per group or tag, topmost first.
+- `own: [Monitor64OwnRule]?` – Thresholds set on hosts.
+- `targets: Monitor64Targets?` – Existing groups and tags.
+
+## `Node64.Monitor64RuleStdResult` (struct)
+
+Result of saving the default table.
+
+- `ok: Bool?` – Always `true`.
+- `changed: [String]?` – Saved kinds.
+
+## `Node64.Monitor64Series` (struct)
+
+Chart data of a host (`GET /monitor64/series`). Schema `Monitor64Series`.
+
+- `from: Int?` – Start, Unix seconds.
+- `to: Int?` – End, Unix seconds.
+- `series: [Entry]?` – The requested series.
+- `cluster: [ClusterPart]?` – Pieces of other nodes (cluster).
+
+## `Node64.Monitor64Series.ClusterPart` (struct)
+
+Piece delivered by another node.
+
+- `node: String?` – ID of the node.
+- `name: String?` – Name of the node.
+- `ok: Bool?` – The piece arrived.
+- `missing: Bool?` – Node not reachable: gap.
+
+## `Node64.Monitor64Series.Entry` (struct)
+
+One series as requested.
+
+- `s: String?`
+- `res: String?` – Resolution: `raw`, `5m`, `1h` (empty without data).
+- `step: Int?` – Width of the points in seconds (0 = single raw values).
+- `points: [Point]?` – Points.
+
+## `Node64.Monitor64Series.Point` (struct)
+
+One data point.
+
+- `t: Int?` – Unix seconds.
+- `min: Double?` – Minimum.
+- `avg: Double?` – Average.
+- `max: Double?` – Maximum.
+- `s: Int?` – Width of this point in seconds.
+
+## `Node64.Monitor64SeriesRange` (open enum)
+
+Time range of `Monitor64/series(host:series:range:offset:from:to:points:)`.
+
+- `.sixHours` = `"6h"`
+- `.day` = `"24h"`
+- `.week` = `"7d"`
+- `.month` = `"30d"`
+- `.year` = `"1y"`
+
+## `Node64.Monitor64Service` (struct)
+
+A service.
+
+- `key: String?` – Key.
+- `name: String?` – Name.
+- `kind: String?` – Kind.
+- `state: Monitor64State?` – State.
+- `text: String?` – Text.
+- `cause: String?` – Cause.
+- `via: String?` – Access it comes from.
+- `adopted: Int?`
+- `vanished: Bool?` – Vanished.
+- `showOnly: Bool?` – Display only.
+- `acked: Bool?` – Acknowledged.
+- `metrics: [Monitor64Metric]?` – Measured values.
+
+## `Node64.Monitor64ServiceRow` (struct)
+
+Stored service.
+
+- `uid: String?` – UID.
+- `hostUID: String?` – Host UID.
+- `key: String?` – Key.
+- `name: String?` – Own display name.
+- `kind: String?` – Kind.
+- `adopted: Int?`
+- `vanishedAt: Date?` – Vanished at.
+- `via: String?` – Access.
+- `hostRule: String?` – Thresholds "only this service" (JSON).
+- `soll: Monitor64ServiceSoll?` – Wanted state.
+- `report: Monitor64ServiceReport?` – Report mode.
+
+## `Node64.Monitor64ServicesChanged` (struct)
+
+Number of changed services.
+
+- `changed: Int?` – Changed services.
+
+## `Node64.Monitor64ServiceUpdate` (struct)
+
+Change of a service; missing fields stay unchanged.
+
+- `key: String` – Key of the service.
+- `name: String?` – Display name (empty = detected name; at most 200 characters).
+- `soll: Monitor64ServiceSoll?` – Wanted state of guests and containers.
+- `report: Monitor64ServiceReport?`
+- `rules: [String: RuleChange]?` – Rule kind to change of the level "this host" (at most 32 kinds); missing kinds stay.
+- `reset: Bool?` – Remove all thresholds of this host for the kinds of this service.
+
+## `Node64.Monitor64ServiceUpdate.RuleChange` (struct)
+
+Change of one rule kind on the host level. Pass an empty `Monitor64Rule` to remove the rule, or `reset` to remove both settings of the kind.
+
+- `rule: Monitor64Rule?` – New rule; an empty rule removes it. Leaving it out (`nil`) is sent as missing, which the node most likely treats as null and so also removes the rule.
+- `scope: Monitor64ServiceUpdateScope?`
+- `reset: Bool?` – Remove both settings on the host for this kind.
+
+## `Node64.Monitor64Settings` (struct)
+
+Settings (`GET /monitor64/settings`). Schema `Monitor64Settings`.
+
+- `interval: Int?` – Default interval of new hosts in seconds.
+- `workers: Int?` – Concurrent queries.
+- `retentionRawHours: Int?` – Hours the raw history is kept.
+- `retention5mDays: Int?` – Days the 5-minute history is kept.
+- `retention1hDays: Int?` – Days the 1-hour history is kept.
+- `hosts: Int?` – Number of hosts.
+- `services: Int?` – Number of services.
+- `status: Monitor64Status?` – Technical state.
+- `port: Int?` – Port of the agent.
+- `publicKey: String?` – Public key of the node (line for `authorized_keys`).
+- `fingerprint: String?` – Fingerprint of the key.
+- `trapPort: Int?` – Port of the trap receiver.
+- `traps: Monitor64TrapStatus?` – State of the trap receiver.
+- `pushPort: Int?` – Port for agents in push mode.
+- `push: Push?` – State of the push listener.
+
+## `Node64.Monitor64Settings.Push` (struct)
+
+State of the push listener.
+
+- `listening: [String]?` – Listening addresses.
+- `stats: Stats?` – Counters.
+
+## `Node64.Monitor64Settings.Push.Stats` (struct)
+
+Counters of the listener (keys `Tokens`, `Pending`, `Parked`).
+
+- `tokens: Int?` – Number of tokens.
+- `pending: Int?` – Pending agents.
+- `parked: Int?` – Parked agents.
+
+## `Node64.Monitor64SettingsInput` (struct)
+
+Request of `Monitor64/updateSettings(_:)`. Schema `Monitor64SettingsInput`.
+
+- `interval: Int` – Default interval of new hosts in seconds, 30–900.
+- `workers: Int` – Concurrent queries, 1–512 (applies after the next start of the module).
+- `trapPort: Int?` – Port of the trap receiver, 1–65535 (applied immediately; `nil` = unchanged).
+- `pushPort: Int?` – Port for agents in push mode, 1–65535 (applied immediately; `nil` = unchanged).
+
+## `Node64.Monitor64Status` (struct)
+
+Technical state of the module. Schema `Monitor64Status`.
+
+- `version: String?` – Version of the module.
+- `uptime: String?` – Uptime as Go duration, e.g. `3h2m1s`.
+- `scheduler: Scheduler?` – Scheduler state.
+- `historyMB: Double?` – Size of the history in MB.
+- `loadgenHosts: Int?` – Hosts of the load generator.
+- `loadgenPointsPerSec: Double?` – Points per second of the load generator.
+- `heapMB: Double?` – Heap in MB.
+- `goroutines: Int?` – Number of goroutines.
+
+## `Node64.Monitor64Status.Scheduler` (struct)
+
+State of the scheduler.
+
+- `jobs: Int?` – Number of jobs.
+- `running: Int?` – Running jobs.
+- `workers: Int?` – Workers.
+- `runs: Int?` – Total runs.
+- `late: Int?` – Late runs.
+
+## `Node64.Monitor64Targets` (struct)
+
+Existing groups and tags of the hosts.
+
+- `groups: [String]?` – Groups.
+- `tags: [String]?` – Tags.
+
+## `Node64.Monitor64TestInput` (struct)
+
+Input of a connection test (nothing is saved).
+
+- `address: String` – Address of the host.
+- `access: Monitor64AccessInput?` – Access to test.
+- `accessUID: String?` – Stored access: must belong to the host with this address; empty fields in `access` (also the secret) count as stored, the type must not change.
+
+## `Node64.Monitor64TestResult` (struct)
+
+Result of a connection test. A failed test is `200` with `ok == false`.
+
+- `ok: Bool?` – Success.
+- `error: String?` – Error text (also partial errors).
+- `ms: Int?` – Duration in milliseconds.
+- `fingerprint: String?` – Fingerprint of certificate or SSH host key.
+- `services: [Monitor64DiscoveredService]?` – Discovered services.
+- `needConfirm: Bool?` – Confirm the fingerprint first (store as `pin`/`hostkey`), then test again.
+- `trusted: Bool?` – Certificate from a known CA or pin matches.
+- `certSubject: String?` – Certificate subject.
+- `version: String?` – Version.
+- `node: String?` – Node.
+- `cluster: String?` – Cluster.
+- `nodes: [Node]?` – Proxmox: nodes of the cluster.
+- `summary: String?` – Summary.
+- `warning: String?` – Warning.
+- `device: String?` – SNMP: nas, ups, printer, switch, router, ap, server, device.
+- `profiles: [Profile]?` – SNMP: detected profiles.
+- `queries: [String]?` – SNMP: what is queried.
+
+## `Node64.Monitor64TestResult.Node` (struct)
+
+A node of the Proxmox cluster.
+
+- `name: String?` – Name.
+- `ip: String?` – IP.
+- `id: Int?` – ID.
+- `online: Bool?` – Online.
+- `local: Bool?` – Node behind the queried address.
+
+## `Node64.Monitor64TestResult.Profile` (struct)
+
+A detected SNMP profile.
+
+- `id: String?` – ID.
+- `name: String?` – Name.
+- `verified: Bool?` – Verified on a real device.
+
+## `Node64.Monitor64TrapStatus` (struct)
+
+State of the SNMP trap receiver.
+
+- `active: Int?` – Hosts with traps.
+- `running: Bool?` – Receiver runs.
+- `port: Int?` – Port.
+- `engineID: String?` – Engine ID.
+- `error: String?` – Error text.
+- `stats: Stats?` – Counters.
+- `unknown: [UnknownSender]?` – Unknown senders, newest first.
+
+## `Node64.Monitor64TrapStatus.Stats` (struct)
+
+Counters of the trap receiver.
+
+- `received: Int?` – Received.
+- `accepted: Int?` – Accepted.
+- `tooBig: Int?` – Too big.
+- `rateLimited: Int?` – Rate limited.
+- `badPacket: Int?` – Bad packets.
+- `rejected: Int?` – Rejected.
+- `unknown: Int?` – From unknown senders.
+- `queueFull: Int?` – Dropped, queue full.
+
+## `Node64.Monitor64TrapStatus.UnknownSender` (struct)
+
+Unknown sender of traps.
+
+- `addr: String?` – Address.
+- `first: Date?` – First seen.
+- `last: Date?` – Last seen.
+- `count: Int?` – Number of traps.
+- `version: String?` – SNMP version.
+- `trapOID: String?` – Trap OID.
+- `trapName: String?` – Trap name.
+- `user: String?` – SNMPv3 user.
+
+## `Node64.Monitor64Window` (struct)
+
+Effective maintenance window.
+
+- `id: String?` – ID.
+- `hosts: [String]?` – Hosts.
+- `groups: [String]?` – Groups.
+- `tags: [String]?` – Tags.
+- `start: Date?` – Start.
+- `end: Date?` – End.
+- `recurring: Monitor64Recurrence?` – Recurrence.
+- `reason: String?` – Reason.
+
 ## `Node64.NodeCreatedAPIKey` (struct)
 
 Result of `Node64/Node/APIKeys/create(name:)`. The key is only part of this response.
@@ -4135,6 +5549,12 @@ Color theme of a status page.
 - `.auto` = `"auto"`
 - `.light` = `"light"`
 - `.dark` = `"dark"`
+
+## `Node64.StatusPageView` (struct)
+
+What a status page shows right now (`GET /status-pages/{id}/view`), same structure as the page's `status.json`.
+
+- `raw: JSONValue` – The complete JSON object.
 
 ## `Node64.Version` (struct)
 

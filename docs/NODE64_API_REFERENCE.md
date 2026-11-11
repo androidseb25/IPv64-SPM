@@ -323,6 +323,73 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `GET /modules` | `node64.node.modules.list` |
 | `POST /modules/{name}/disable` | `node64.node.modules.disable` |
 | `POST /modules/{name}/enable` | `node64.node.modules.enable` |
+| `DELETE /monitor64/access/{uid}` | `node64.monitor64.access.delete` |
+| `PUT /monitor64/access/{uid}` | `node64.monitor64.access.update` |
+| `POST /monitor64/access/{uid}/hostkey-reset` | `node64.monitor64.access.resetHostKey` |
+| `POST /monitor64/access/{uid}/test` | `node64.monitor64.access.test` |
+| `GET /monitor64/agent` | `node64.monitor64.agent.get` |
+| `POST /monitor64/agent/refresh` | `node64.monitor64.agent.refresh` |
+| `GET /monitor64/cluster` | `node64.monitor64.cluster.get` |
+| `GET /monitor64/cluster/hosts/{uid}` | `node64.monitor64.cluster.host` |
+| `PUT /monitor64/cluster/hosts/{uid}` | `node64.monitor64.cluster.updateHost` |
+| `POST /monitor64/cluster/hosts/{uid}/reach` | `node64.monitor64.cluster.testReach` |
+| `GET /monitor64/cluster/keys` | `node64.monitor64.cluster.keys` |
+| `POST /monitor64/cluster/keys/confirm` | `node64.monitor64.cluster.confirmKey` |
+| `POST /monitor64/cluster/keys/retire` | `node64.monitor64.cluster.retireKeys` |
+| `POST /monitor64/cluster/keys/retry` | `node64.monitor64.cluster.retryKeys` |
+| `POST /monitor64/cluster/keys/rotate` | `node64.monitor64.cluster.rotateKey` |
+| `GET /monitor64/cluster/orphans` | `node64.monitor64.cluster.orphans` |
+| `POST /monitor64/cluster/orphans/assign` | `node64.monitor64.cluster.assignOrphans` |
+| `POST /monitor64/cluster/orphans/remove` | `node64.monitor64.cluster.removeOrphans` |
+| `GET /monitor64/cluster/views` | `node64.monitor64.cluster.views` |
+| `GET /monitor64/hosts` | `node64.monitor64.hosts.list` |
+| `POST /monitor64/hosts` | `node64.monitor64.hosts.create` |
+| `DELETE /monitor64/hosts/{uid}` | `node64.monitor64.hosts.delete` |
+| `GET /monitor64/hosts/{uid}` | `node64.monitor64.hosts.get` |
+| `PUT /monitor64/hosts/{uid}` | `node64.monitor64.hosts.update` |
+| `POST /monitor64/hosts/{uid}/access` | `node64.monitor64.hosts.createAccess` |
+| `PUT /monitor64/hosts/{uid}/agent` | `node64.monitor64.hosts.updateAgent` |
+| `POST /monitor64/hosts/{uid}/agent/update` | `node64.monitor64.hosts.updateAgentNow` |
+| `POST /monitor64/hosts/{uid}/discover` | `node64.monitor64.hosts.discover` |
+| `PUT /monitor64/hosts/{uid}/service` | `node64.monitor64.hosts.updateService` |
+| `POST /monitor64/hosts/{uid}/services/adopt` | `node64.monitor64.hosts.adoptServices` |
+| `POST /monitor64/hosts/{uid}/services/remove` | `node64.monitor64.hosts.removeServices` |
+| `GET /monitor64/hosts/{uid}/traps` | `node64.monitor64.hosts.traps` |
+| `POST /monitor64/hosts/{uid}/traps/reset` | `node64.monitor64.hosts.resetTraps` |
+| `GET /monitor64/maintenance` | `node64.monitor64.maintenance.list` |
+| `POST /monitor64/maintenance` | `node64.monitor64.maintenance.create` |
+| `DELETE /monitor64/maintenance/{uid}` | `node64.monitor64.maintenance.delete` |
+| `PUT /monitor64/maintenance/{uid}` | `node64.monitor64.maintenance.update` |
+| `POST /monitor64/maintenance/{uid}/end` | `node64.monitor64.maintenance.end` |
+| `GET /monitor64/nodeaddr` | `node64.monitor64.nodeAddress` |
+| `GET /monitor64/notify` | `node64.monitor64.notify.get` |
+| `PUT /monitor64/notify` | `node64.monitor64.notify.update` |
+| `POST /monitor64/notify/overrides` | `node64.monitor64.notify.createOverride` |
+| `DELETE /monitor64/notify/overrides/{uid}` | `node64.monitor64.notify.deleteOverride` |
+| `PUT /monitor64/notify/overrides/{uid}` | `node64.monitor64.notify.updateOverride` |
+| `POST /monitor64/notify/overrides/{uid}/move` | `node64.monitor64.notify.moveOverride` |
+| `POST /monitor64/notify/test` | `node64.monitor64.notify.test` |
+| `GET /monitor64/overview` | `node64.monitor64.overview` |
+| `GET /monitor64/problems` | `node64.monitor64.problems.list` |
+| `GET /monitor64/problems.csv` | `node64.monitor64.problems.csv` |
+| `POST /monitor64/problems/action` | `node64.monitor64.problems.perform` |
+| `GET /monitor64/problems/{uid}` | `node64.monitor64.problems.get` |
+| `GET /monitor64/push/token` | `node64.monitor64.pushToken` |
+| `GET /monitor64/rules` | `node64.monitor64.rules.get` |
+| `POST /monitor64/rules/overrides` | `node64.monitor64.rules.createOverride` |
+| `DELETE /monitor64/rules/overrides/{uid}` | `node64.monitor64.rules.deleteOverride` |
+| `PUT /monitor64/rules/overrides/{uid}` | `node64.monitor64.rules.updateOverride` |
+| `POST /monitor64/rules/overrides/{uid}/move` | `node64.monitor64.rules.moveOverride` |
+| `POST /monitor64/rules/preview` | `node64.monitor64.rules.preview` |
+| `PUT /monitor64/rules/std` | `node64.monitor64.rules.updateStandard` |
+| `GET /monitor64/series` | `node64.monitor64.series` |
+| `GET /monitor64/settings` | `node64.monitor64.settings` |
+| `PUT /monitor64/settings` | `node64.monitor64.updateSettings` |
+| `GET /monitor64/sparks` | `node64.monitor64.sparks` |
+| `GET /monitor64/status` | `node64.monitor64.status` |
+| `POST /monitor64/test` | `node64.monitor64.test` |
+| `GET /monitor64/traps` | `node64.monitor64.traps.status` |
+| `DELETE /monitor64/traps/unknown` | `node64.monitor64.traps.clearUnknown` |
 | `GET /online-checks` | `node64.hc.onlineChecks.list` |
 | `POST /online-checks` | `node64.hc.onlineChecks.create` |
 | `DELETE /online-checks/{token}` | `node64.hc.onlineChecks.delete` |
@@ -362,6 +429,7 @@ Each entry: Swift call path, HTTP endpoint, signature, summary. Model fields: se
 | `POST /status-pages/{id}/notices` | `node64.hc.statusPages.notices.create` |
 | `DELETE /status-pages/{id}/notices/{nid}` | `node64.hc.statusPages.notices.delete` |
 | `PUT /status-pages/{id}/notices/{nid}` | `node64.hc.statusPages.notices.update` |
+| `GET /status-pages/{id}/view` | `node64.hc.statusPages.view` |
 | `GET /update` | `node64.node.update.get` |
 | `POST /update/apply` | `node64.node.update.apply` |
 | `POST /update/check` | `node64.node.update.check` |
@@ -2237,6 +2305,14 @@ func update(_ id: Int, _ input: Node64.StatusPageInput) async throws -> Node64.S
 
 Changes a status page; only the fields you set change.
 
+### `node64.hc.statusPages.view` `GET /status-pages/{id}/view`
+
+```swift
+func view(_ id: Int, lang: Node64.StatusPageLanguage? = nil) async throws -> Node64.StatusPageView
+```
+
+What a status page shows right now: overall state, sections, groups with the state of each entry, maintenances and incidents.
+
 ### `node64.hc.statusPages.delete` `DELETE /status-pages/{id}`
 
 ```swift
@@ -2524,6 +2600,582 @@ func cancelCodeLink() async throws
 ```
 
 Discards the open link code. Fails with `503` when linking is not available.
+
+## `node64.monitor64`
+
+Monitor64: hosts and services with thresholds, problems, notification, maintenance, agent and cluster.
+
+### `node64.monitor64.overview` `GET /monitor64/overview`
+
+```swift
+func overview() async throws -> Node64.Monitor64Overview
+```
+
+Overview: counters per state, open problems, recent events and all hosts with their current state.
+
+### `node64.monitor64.sparks` `GET /monitor64/sparks`
+
+```swift
+func sparks(host: String? = nil) async throws -> [String: [Double]]
+```
+
+Mini history of the last 24 hours: up to 48 averages per key.
+
+### `node64.monitor64.series` `GET /monitor64/series`
+
+```swift
+func series(host: String, series: [String], range: Node64.Monitor64SeriesRange? = nil, offset: Int? = nil, from: Int? = nil, to: Int? = nil, points: Int? = nil) async throws -> Node64.Monitor64Series
+```
+
+Chart series of a host.
+
+### `node64.monitor64.status` `GET /monitor64/status`
+
+```swift
+func status() async throws -> Node64.Monitor64Status
+```
+
+Technical state: scheduler, size of the history, memory, load generator.
+
+### `node64.monitor64.settings` `GET /monitor64/settings`
+
+```swift
+func settings() async throws -> Node64.Monitor64Settings
+```
+
+Settings: default interval, concurrent queries, history retention, public node key, trap receiver, push port and technical state.
+
+### `node64.monitor64.updateSettings` `PUT /monitor64/settings`
+
+```swift
+func updateSettings(_ input: Node64.Monitor64SettingsInput) async throws -> Node64.Monitor64Ok
+```
+
+Saves the settings. `interval` and `workers` are always required; `nil` ports stay unchanged.
+
+### `node64.monitor64.test` `POST /monitor64/test`
+
+```swift
+func test(_ input: Node64.Monitor64TestInput) async throws -> Node64.Monitor64TestResult
+```
+
+Tests a connection once before anything is saved (wizard) and returns the discovered services.
+
+### `node64.monitor64.nodeAddress` `GET /monitor64/nodeaddr`
+
+```swift
+func nodeAddress(target: String? = nil) async throws -> String
+```
+
+Source address of this node towards a target (for `from="..."` in `authorized_keys`). No packet is sent.
+
+### `node64.monitor64.pushToken` `GET /monitor64/push/token`
+
+```swift
+func pushToken() async throws -> Node64.Monitor64PushToken
+```
+
+A new push token for the install command of the wizard (stored only together with the access; gives no access) and the push port of the node.
+
+## `node64.monitor64.access`
+
+Accesses (agent, SSH, Proxmox, Docker, SNMP, ...) of hosts.
+
+### `node64.monitor64.access.update` `PUT /monitor64/access/{uid}`
+
+```swift
+func update(_ uid: String, _ input: Node64.Monitor64AccessInput) async throws -> Node64.Monitor64Access
+```
+
+Changes an access (`PUT`). Empty fields stay: an empty `secret` keeps the stored one, `clearSecret` removes it, a
+
+### `node64.monitor64.access.delete` `DELETE /monitor64/access/{uid}`
+
+```swift
+func delete(_ uid: String) async throws -> Node64.Monitor64Ok
+```
+
+Removes an access.
+
+### `node64.monitor64.access.resetHostKey` `POST /monitor64/access/{uid}/hostkey-reset`
+
+```swift
+func resetHostKey(_ uid: String) async throws -> Node64.Monitor64Ok
+```
+
+Discards the remembered SSH host key; the next contact remembers the new one (after "key changed").
+
+### `node64.monitor64.access.test` `POST /monitor64/access/{uid}/test`
+
+```swift
+func test(_ uid: String, changes: Node64.Monitor64AccessInput? = nil) async throws -> Node64.Monitor64TestResult
+```
+
+Tests a stored access with its stored secret and host key; nothing is saved.
+
+## `node64.monitor64.agent`
+
+Agent distribution.
+
+### `node64.monitor64.agent.get` `GET /monitor64/agent`
+
+```swift
+func get() async throws -> Node64.Monitor64Agent
+```
+
+State of the agent distribution: available version, files, install commands and hosts with their agent version (no network access).
+
+### `node64.monitor64.agent.refresh` `POST /monitor64/agent/refresh`
+
+```swift
+func refresh() async throws -> Node64.Monitor64Agent
+```
+
+Fetches the agent directory now ("check now"); an error is afterwards in `source.error`. Fails with `503` if the module does not run.
+
+## `node64.monitor64.cluster`
+
+Cluster responsibility, node keys and orphaned hosts.
+
+### `node64.monitor64.cluster.get` `GET /monitor64/cluster`
+
+```swift
+func get() async throws -> Node64.Monitor64Cluster
+```
+
+Nodes, responsibility per host (view of this node) and the keys of this node.
+
+### `node64.monitor64.cluster.views` `GET /monitor64/cluster/views`
+
+```swift
+func views(host: String? = nil) async throws -> Node64.Monitor64ClusterViews
+```
+
+Which node monitors each host, taken from the stored state; without `host` the orphaned hosts are included.
+
+### `node64.monitor64.cluster.host` `GET /monitor64/cluster/hosts/{uid}`
+
+```swift
+func host(_ uid: String) async throws -> Node64.Monitor64ClusterHostInfo
+```
+
+Responsibility of a host: members, setting, view and the latest takeovers and handbacks. `404` if unknown.
+
+### `node64.monitor64.cluster.updateHost` `PUT /monitor64/cluster/hosts/{uid}`
+
+```swift
+func updateHost(_ uid: String, _ input: Node64.Monitor64ClusterHostInput) async throws -> Node64.Monitor64ClusterHostUpdate
+```
+
+Sets the preferred node and the backup nodes of a host (only nodes of this cluster, or this node).
+
+### `node64.monitor64.cluster.testReach` `POST /monitor64/cluster/hosts/{uid}/reach`
+
+```swift
+func testReach(_ uid: String) async throws -> Node64.Monitor64ClusterReach
+```
+
+Tests the accesses of a host from all reachable nodes (to suggest backup nodes); has a time limit. `404` if unknown.
+
+### `node64.monitor64.cluster.keys` `GET /monitor64/cluster/keys`
+
+```swift
+func keys() async throws -> Node64.Monitor64ClusterKeys
+```
+
+Keys of this node: fingerprint, `authorized_keys` line, old keys and open conversions (no private key).
+
+### `node64.monitor64.cluster.rotateKey` `POST /monitor64/cluster/keys/rotate`
+
+```swift
+func rotateKey() async throws -> Node64.Monitor64ClusterKeys
+```
+
+Creates a new key for all nodes. Sensitive: agents are converted in the background (poll `keys()` while
+
+### `node64.monitor64.cluster.confirmKey` `POST /monitor64/cluster/keys/confirm`
+
+```swift
+func confirmKey(accessUID: String) async throws -> Node64.Monitor64ClusterKeys
+```
+
+Confirms the manual conversion of one SSH access (line added by hand), or discards the entry; applies cluster-wide.
+
+### `node64.monitor64.cluster.retryKeys` `POST /monitor64/cluster/keys/retry`
+
+```swift
+func retryKeys() async throws -> Node64.Monitor64ClusterKeys
+```
+
+Retries the agents not yet converted, in the background; poll `keys()` while `running`. `503` (`not_running`) if the module is off.
+
+### `node64.monitor64.cluster.retireKeys` `POST /monitor64/cluster/keys/retire`
+
+```swift
+func retireKeys() async throws -> Node64.Monitor64ClusterKeys
+```
+
+Discards the old keys immediately. Destructive: agents that were not converted are locked out afterwards.
+
+### `node64.monitor64.cluster.orphans` `GET /monitor64/cluster/orphans`
+
+```swift
+func orphans() async throws -> Node64.Monitor64Orphans
+```
+
+Hosts that no node monitors any more, with reason and previous node.
+
+### `node64.monitor64.cluster.assignOrphans` `POST /monitor64/cluster/orphans/assign`
+
+```swift
+func assignOrphans(_ input: Node64.Monitor64OrphanInput) async throws -> Node64.Monitor64OrphanResult
+```
+
+Assigns orphaned hosts to this node. Only affects hosts that are orphaned right now; other UIDs are skipped.
+
+### `node64.monitor64.cluster.removeOrphans` `POST /monitor64/cluster/orphans/remove`
+
+```swift
+func removeOrphans(_ input: Node64.Monitor64OrphanInput) async throws -> Node64.Monitor64OrphanResult
+```
+
+Removes orphaned hosts. Destructive: the hosts are deleted. Only affects hosts that are orphaned right now; other UIDs are skipped. `400` (`json`) if neither `uids` nor `all` is set.
+
+## `node64.monitor64.hosts`
+
+Hosts with their services and traps.
+
+### `node64.monitor64.hosts.list` `GET /monitor64/hosts`
+
+```swift
+func list() async throws -> [Node64.Monitor64OverviewHost]
+```
+
+All hosts with their current state (as on the overview).
+
+### `node64.monitor64.hosts.get` `GET /monitor64/hosts/{uid}`
+
+```swift
+func get(_ uid: String) async throws -> Node64.Monitor64HostDetail
+```
+
+A host with services, thresholds per service, accesses (without secrets, with runtime state), new and ignored services and the charts of the host page. Fails with `404` (`not_found`) if unknown.
+
+### `node64.monitor64.hosts.create` `POST /monitor64/hosts`
+
+```swift
+func create(_ input: Node64.Monitor64HostCreate) async throws -> Node64.Monitor64HostUID
+```
+
+Creates a host with up to 8 accesses. Discovered services from the connection test are entered as new, those in
+
+### `node64.monitor64.hosts.update` `PUT /monitor64/hosts/{uid}`
+
+```swift
+func update(_ uid: String, _ input: Node64.Monitor64HostInput) async throws -> Node64.Monitor64HostUID
+```
+
+Replaces the fields of a host (`PUT`). Only `kind`, `intervalSec` and `agentAutoupdate` stay unchanged when empty, 0 or `nil`; everything else, including `tags`, `group` and `notes`, is replaced. Pausing and resuming is logged.
+
+### `node64.monitor64.hosts.delete` `DELETE /monitor64/hosts/{uid}`
+
+```swift
+func delete(_ uid: String, deleteHistory: Bool = false) async throws -> Node64.Monitor64HostDeleted
+```
+
+Removes a host with its accesses and closes its open problems (the problem history stays).
+
+### `node64.monitor64.hosts.createAccess` `POST /monitor64/hosts/{uid}/access`
+
+```swift
+func createAccess(host uid: String, _ input: Node64.Monitor64AccessInput) async throws -> Node64.Monitor64Access
+```
+
+Creates an access on the host; it is queried at once. The secret in `input` is write-only.
+
+### `node64.monitor64.hosts.discover` `POST /monitor64/hosts/{uid}/discover`
+
+```swift
+func discover(_ uid: String) async throws -> Node64.Monitor64DiscoverResult
+```
+
+Runs a discovery round now (time limit 20 s) and reports the result. Fails with `503` (`not_running`) if the host is not scheduled on this node or the module does not run.
+
+### `node64.monitor64.hosts.adoptServices` `POST /monitor64/hosts/{uid}/services/adopt`
+
+```swift
+func adoptServices(host uid: String, keys: [String], state: Node64.Monitor64AdoptState) async throws -> Node64.Monitor64ServicesChanged
+```
+
+Adopts, ignores or offers again discovered services. Unknown keys are skipped.
+
+### `node64.monitor64.hosts.removeServices` `POST /monitor64/hosts/{uid}/services/remove`
+
+```swift
+func removeServices(host uid: String, keys: [String]) async throws -> Node64.Monitor64ServicesChanged
+```
+
+Removes services (e.g. after "vanished"). Unknown keys are skipped.
+
+### `node64.monitor64.hosts.updateService` `PUT /monitor64/hosts/{uid}/service`
+
+```swift
+func updateService(host uid: String, _ update: Node64.Monitor64ServiceUpdate) async throws -> Node64.Monitor64Ok
+```
+
+Changes a service: display name, wanted state, "display only" and the thresholds of the level "this host" per rule kind. Missing or `nil` fields stay unchanged. The effective threshold including inherited fields is validated (warning before critical). Fails with `404` for an unknown host or service.
+
+### `node64.monitor64.hosts.traps` `GET /monitor64/hosts/{uid}/traps`
+
+```swift
+func traps(_ uid: String) async throws -> Node64.Monitor64HostTraps
+```
+
+Latest traps of a host, newest first (in a cluster the state of the responsible node).
+
+### `node64.monitor64.hosts.resetTraps` `POST /monitor64/hosts/{uid}/traps/reset`
+
+```swift
+func resetTraps(_ uid: String) async throws -> Node64.Monitor64Ok
+```
+
+Resets the open traps of a host (like acknowledging the problem on the service "traps").
+
+### `node64.monitor64.hosts.updateAgent` `PUT /monitor64/hosts/{uid}/agent`
+
+```swift
+func updateAgent(host uid: String, autoupdate: Bool) async throws -> Node64.Monitor64AgentAutoupdate
+```
+
+Switches automatic agent updates of a host on or off.
+
+### `node64.monitor64.hosts.updateAgentNow` `POST /monitor64/hosts/{uid}/agent/update`
+
+```swift
+func updateAgentNow(host uid: String) async throws -> Node64.Monitor64AgentUpdateStarted
+```
+
+Updates the agent of a host now, even with automatic updates off. The update runs in the background (`202`); read the result with `Node64/Monitor64/Agent/get()` or at the access. Errors: `400` with `agent_elsewhere`,
+
+## `node64.monitor64.maintenance`
+
+Maintenance windows.
+
+### `node64.monitor64.maintenance.list` `GET /monitor64/maintenance`
+
+```swift
+func list() async throws -> Node64.Monitor64MaintList
+```
+
+Windows with state (running, planned, recurring, ended), plus hosts, groups and tags to choose from and the time zone of the node.
+
+### `node64.monitor64.maintenance.create` `POST /monitor64/maintenance`
+
+```swift
+func create(_ input: Node64.Monitor64MaintInput) async throws -> String
+```
+
+Creates a window. Problems in maintenance are not reported; all hosts are evaluated again at once. Returns the UID.
+
+### `node64.monitor64.maintenance.update` `PUT /monitor64/maintenance/{uid}`
+
+```swift
+func update(_ uid: String, _ input: Node64.Monitor64MaintInput) async throws -> String
+```
+
+Replaces a window. Returns the UID.
+
+### `node64.monitor64.maintenance.delete` `DELETE /monitor64/maintenance/{uid}`
+
+```swift
+func delete(_ uid: String) async throws -> Node64.Monitor64Ok
+```
+
+Removes a window.
+
+### `node64.monitor64.maintenance.end` `POST /monitor64/maintenance/{uid}/end`
+
+```swift
+func end(_ uid: String) async throws -> Node64.Monitor64Ok
+```
+
+Ends a window now. Recurring windows end for good.
+
+## `node64.monitor64.notify`
+
+Notification settings and their overrides per group or tag.
+
+### `node64.monitor64.notify.get` `GET /monitor64/notify`
+
+```swift
+func get() async throws -> Node64.Monitor64Notify
+```
+
+Basic settings (channels by severity, reminders), channels of the node, overrides per group or tag and the quiet hours.
+
+### `node64.monitor64.notify.update` `PUT /monitor64/notify`
+
+```swift
+func update(_ config: Node64.Monitor64NotifyConfig) async throws -> Node64.Monitor64Ok
+```
+
+Saves the basic settings (replaces them). Channels without warn and crit are dropped, duplicates count once.
+
+### `node64.monitor64.notify.test` `POST /monitor64/notify/test`
+
+```swift
+func test() async throws -> Node64.Monitor64NotifyTestResult
+```
+
+Sends a sample problem to all channels of the basic settings (warn and crit). Answers `503` if it cannot be sent.
+
+### `node64.monitor64.notify.createOverride` `POST /monitor64/notify/overrides`
+
+```swift
+func createOverride(_ input: Node64.Monitor64NotifyOverrideInput) async throws -> String
+```
+
+Adds an override at the bottom. Returns the UID.
+
+### `node64.monitor64.notify.updateOverride` `PUT /monitor64/notify/overrides/{uid}`
+
+```swift
+func updateOverride(_ uid: String, _ input: Node64.Monitor64NotifyOverrideInput) async throws -> String
+```
+
+Replaces an override; its position stays. Returns the UID.
+
+### `node64.monitor64.notify.deleteOverride` `DELETE /monitor64/notify/overrides/{uid}`
+
+```swift
+func deleteOverride(_ uid: String) async throws -> Node64.Monitor64Ok
+```
+
+Removes an override.
+
+### `node64.monitor64.notify.moveOverride` `POST /monitor64/notify/overrides/{uid}/move`
+
+```swift
+func moveOverride(_ uid: String, _ direction: Node64.Monitor64MoveDirection) async throws -> Node64.Monitor64Ok
+```
+
+Moves an override one place up or down (the topmost wins).
+
+## `node64.monitor64.problems`
+
+Problems with history.
+
+### `node64.monitor64.problems.list` `GET /monitor64/problems`
+
+```swift
+func list(status: Node64.Monitor64ProblemListStatus? = nil, range: Node64.Monitor64ProblemListRange? = nil, who: String? = nil, query: String? = nil, host: String? = nil) async throws -> Node64.Monitor64ProblemList
+```
+
+Problems, newest first (at most 5000). Answers `404` if the module is off.
+
+### `node64.monitor64.problems.csv` `GET /monitor64/problems.csv`
+
+```swift
+func csv(status: Node64.Monitor64ProblemListStatus? = nil, range: Node64.Monitor64ProblemListRange? = nil, who: String? = nil, query: String? = nil, host: String? = nil) async throws -> String
+```
+
+The same list as CSV: semicolon separated, UTF-8 with BOM (kept in the string), times in the time zone of the user, headings in their language. Cells starting with `= + - @` get a leading `'`. Filters as for `list(status:range:who:query:host:)`.
+
+### `node64.monitor64.problems.get` `GET /monitor64/problems/{uid}`
+
+```swift
+func get(_ uid: String) async throws -> Node64.Monitor64ProblemDetail
+```
+
+A problem with its history and the channel names.
+
+### `node64.monitor64.problems.perform` `POST /monitor64/problems/action`
+
+```swift
+func perform(_ action: Node64.Monitor64ProblemAction) async throws -> Node64.Monitor64Ok
+```
+
+Acknowledges, un-acknowledges, comments on or resolves the open problem of a host and service. After `resolve` the host is evaluated again at once. Acknowledging or resolving the service `traps` resets the open traps.
+
+## `node64.monitor64.rules`
+
+Thresholds (rules) and their overrides per group or tag.
+
+### `node64.monitor64.rules.get` `GET /monitor64/rules`
+
+```swift
+func get() async throws -> Node64.Monitor64Rules
+```
+
+Rule kinds, built-in and effective defaults, overrides per group or tag (topmost wins) with their effect, and the thresholds set on hosts.
+
+### `node64.monitor64.rules.updateStandard` `PUT /monitor64/rules/std`
+
+```swift
+func updateStandard(_ rules: [String: Node64.Monitor64Rule]) async throws -> Node64.Monitor64RuleStdResult
+```
+
+Replaces the changes to the built-in default: only kinds in `rules` that differ from the built-in default are stored, kinds not named are built-in again afterwards. All hosts are evaluated again at once.
+
+### `node64.monitor64.rules.preview` `POST /monitor64/rules/preview`
+
+```swift
+func preview(_ input: Node64.Monitor64RuleOverrideInput, replacing uid: String? = nil) async throws -> Node64.Monitor64Effect
+```
+
+Effect of a new or changed override on the current state; nothing is stored.
+
+### `node64.monitor64.rules.createOverride` `POST /monitor64/rules/overrides`
+
+```swift
+func createOverride(_ input: Node64.Monitor64RuleOverrideInput) async throws -> String
+```
+
+Adds an override at the bottom. All hosts are evaluated again at once. Returns the UID.
+
+### `node64.monitor64.rules.updateOverride` `PUT /monitor64/rules/overrides/{uid}`
+
+```swift
+func updateOverride(_ uid: String, _ input: Node64.Monitor64RuleOverrideInput) async throws -> String
+```
+
+Replaces an override; its position stays. Returns the UID.
+
+### `node64.monitor64.rules.deleteOverride` `DELETE /monitor64/rules/overrides/{uid}`
+
+```swift
+func deleteOverride(_ uid: String) async throws -> Node64.Monitor64Ok
+```
+
+Removes an override.
+
+### `node64.monitor64.rules.moveOverride` `POST /monitor64/rules/overrides/{uid}/move`
+
+```swift
+func moveOverride(_ uid: String, _ direction: Node64.Monitor64MoveDirection) async throws -> Node64.Monitor64Ok
+```
+
+Moves an override one place up or down (the topmost wins); at the edge nothing happens.
+
+## `node64.monitor64.traps`
+
+SNMP trap receiver.
+
+### `node64.monitor64.traps.status` `GET /monitor64/traps`
+
+```swift
+func status() async throws -> Node64.Monitor64TrapStatus
+```
+
+State of the SNMP trap receiver with counters and unknown senders.
+
+### `node64.monitor64.traps.clearUnknown` `DELETE /monitor64/traps/unknown`
+
+```swift
+func clearUnknown() async throws -> Node64.Monitor64Ok
+```
+
+Clears the list of unknown trap senders.
 
 ## `node64.node`
 

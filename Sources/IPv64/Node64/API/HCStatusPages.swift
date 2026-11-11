@@ -54,6 +54,20 @@ extension Node64.HC.StatusPages {
         try await client.send(Request(.put, "/status-pages/\(id)", body: .json(input)))
     }
 
+    /// What a status page shows right now: overall state, sections, groups with the state of each entry, maintenances and incidents.
+    ///
+    /// Same data as the `status.json` of the page, but also for disabled or password-protected pages (signed in like the rest of the API).
+    /// The spec documents no schema, so the result wraps the raw JSON. Sections with `section` empty are Healthchecks, `systems` is Monitor64.
+    ///
+    /// - Parameters:
+    ///   - id: ID of the status page.
+    ///   - lang: Language of the texts (reasons of incidents), only `.en` or `.de`; the server default is English.
+    ///
+    /// `GET /status-pages/{id}/view`
+    public func view(_ id: Int, lang: Node64.StatusPageLanguage? = nil) async throws -> Node64.StatusPageView {
+        try await client.send(Request(.get, "/status-pages/\(id)/view", query: [QueryItem("lang", lang)]))
+    }
+
     /// Deletes a status page with its groups, entries and notices.
     ///
     /// `DELETE /status-pages/{id}`

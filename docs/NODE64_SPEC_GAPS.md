@@ -1,6 +1,6 @@
 # Node64 – Lücken in der OpenAPI-Spec
 
-Stand: Spec „Node64 – lokale API“ 1.2.0 (352 Operationen), zuletzt abgeglichen am 11.11.2026. Die Spec ändert ihren Inhalt, ohne die Versionsnummer zu ändern: seit dem Bau des Clients kamen rund 85 Endpunkte dazu, 26 (Docker- und Proxmox-Monitoring) fielen weg.
+Stand: Spec „Node64 – lokale API“ 1.2.0 (420 Operationen), zuletzt abgeglichen am 11.11.2026. Die Spec ändert ihren Inhalt, ohne die Versionsnummer zu ändern: seit dem Bau des Clients kamen rund 150 Endpunkte dazu (zuletzt Monitor64), 26 (Docker- und Proxmox-Monitoring unter Healthchecks) fielen weg.
 Jede Lücke hier ist im Client mit einer Annahme oder einem untypisierten Rückgabewert gelöst. Wird die Spec ergänzt, lässt sich der Client typisieren.
 
 ## 1. 2xx-Antworten ohne Schema
@@ -20,6 +20,7 @@ Der Client liefert hier rohes `JSONValue`:
 | `GET /acme-cas/presets` | `certificates.acmeAuthorities.presets` (`[JSONValue]`) |
 | `GET /openapi.json` | `node.openAPI` (erwartbar) |
 | `GET /update`, `POST /update/check`, `PUT /update/settings` | `node.update.get`, `.check`, `.updateSettings` |
+| `GET /status-pages/{id}/view` | `hc.statusPages.view` (`StatusPageView.raw`; nur `additionalProperties`, „wie status.json“) |
 | `GET /dns64/dhcp`, `PUT /dns64/dhcp/mode`, `/role`, `/ipv6` | `dns64.dhcp.status`, `.setMode`, `.setRole`, `.updateIPv6` (der Zustand von `GET /dns64/dhcp` steht nur in der Beschreibung) |
 
 **Vorschlag:** Bei `POST/PUT /checks` und `/maintenance` das angelegte bzw. geänderte Objekt als `Check` bzw. `Maintenance` dokumentieren.
@@ -80,6 +81,7 @@ Teilweise ändern oder vollständig ersetzen? Unklar bei:
 - Honeypot64 `watch`/`cert`: Fehler kommen als `{error, message}` statt `{error, text}`. Der Client legt `message` in `text` ab; `error` enthält dort den Code (`no_key`, `limit_reached`).
 - `GET /update`: Die Feldnamen stehen nur im Text und groß geschrieben (`Mode`, `Channel`, …), vermutlich Go-Felder ohne JSON-Tags.
 - `POST /certs/dns-check/run` dauert bis zu 30 s, so lange wie das Standard-Timeout des Clients.
+- Monitor64: `allOf`-Schemas (`Monitor64Problem`, `Monitor64RuleOverride`, `Monitor64NotifyOverride`, `Monitor64AccessState`, `Monitor64HostService`, `Monitor64HostCreate`) sind im Client flache Structs. Felder mit „null = erben“ (`Monitor64NotifyOverrideInput`) lässt der Client bei `nil` weg; ob die Node Weglassen und `null` gleich behandelt, sagt die Spec nicht. Antworten aus Anlegen und Ändern (`{uid}`) liefert der Client als `String`.
 - Keine `operationId`s: Generatoren müssen Namen raten.
 - Ein Fehlerbeschreibungstext steht als Response-Objekt statt als `description` (`POST /cdn64/hosts` → `422`).
 - `servers` nennt `http://node.seb.home64.de/api`, eine konkrete, private Node über HTTP. Für eine allgemeine Spec wäre eine Server-Variable passender (`{scheme}://{host}/api`).

@@ -354,6 +354,8 @@ extension Node64 {
         public var accessLog: Bool?
         /// Disables the per-IP request limit and per-target limit (connection limits and bans still apply).
         public var noLimits: Bool?
+        /// Do not check the target for reachability (proxy hosts, TLS passthrough), e.g. for services without a web UI: no "unreachable" display, no `node64_cdn64_host_target_up` metric.
+        public var noProbe: Bool?
         /// Country filter mode.
         public var geoMode: CDNGeoMode?
         /// ISO country codes, at most 60 (e.g. `["DE", "AT"]`).
@@ -401,6 +403,7 @@ extension Node64 {
             trustedProxies: [String]? = nil,
             accessLog: Bool? = nil,
             noLimits: Bool? = nil,
+            noProbe: Bool? = nil,
             geoMode: CDNGeoMode? = nil,
             geoCountries: [String]? = nil,
             aiBots: Bool? = nil,
@@ -432,6 +435,7 @@ extension Node64 {
             self.trustedProxies = trustedProxies
             self.accessLog = accessLog
             self.noLimits = noLimits
+            self.noProbe = noProbe
             self.geoMode = geoMode
             self.geoCountries = geoCountries
             self.aiBots = aiBots
@@ -461,6 +465,7 @@ extension Node64 {
             case trustedProxies = "trusted_proxies"
             case accessLog = "access_log"
             case noLimits = "no_limits"
+            case noProbe = "no_probe"
             case geoMode = "geo_mode"
             case geoCountries = "geo_countries"
             case aiBots = "ai_bots"

@@ -4,7 +4,7 @@ Swift-Package für die [IPv64.net API v2](https://ipv64.net/api_v2_docs): DynDNS
 
 Das Package deckt alle 201 Endpunkte der OpenAPI-Spezifikation (`https://ipv64.net/api/v2/openapi.json`) ab. Wo die Spec lückenhaft ist und wie der Client damit umgeht, steht in [`docs/IPV64_SPEC_GAPS.md`](docs/IPV64_SPEC_GAPS.md).
 
-Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-Node im eigenen Netz, mit allen 352 Endpunkten (siehe [Node64](#node64)).
+Zusätzlich enthält es `Node64`, einen Client für die lokale API einer Node64-Node im eigenen Netz, mit allen 420 Endpunkten (siehe [Node64](#node64)).
 
 - Swift 6 Language Mode mit strikter Concurrency-Prüfung
 - `async`/`await`, der Client ist `Sendable` und kann zwischen Tasks und Actors geteilt werden
@@ -188,6 +188,7 @@ let backup = try await node64.node.downloadDatabase()   // Data, enthält Geheim
 | `ports`, `certificates` | Ports, Eingang (Edge), TLS-Zertifikate, CAs, ACME, DNS-01-Prüfung |
 | `link`, `cluster`, `honeypot` | Verknüpfung mit ipv64.net (auch per Code), lokaler Node-Verbund, Honeypot64 inkl. Frühwarnung |
 | `sonar64` | Sonar64-Messknoten: Status, Messungen, Einstellungen |
+| `monitor64` | Monitoring von Hosts und Diensten: Zugänge, Agent, Traps, Schwellen, Probleme, Benachrichtigung, Wartung, Cluster |
 
 Unterschiede zu `IPv64`:
 

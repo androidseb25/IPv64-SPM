@@ -26,6 +26,8 @@ extension Node64 {
     public var honeypot: Honeypot { Honeypot(client: self) }
     /// Sonar64 measurement node: status, recent and inbound measurements, settings.
     public var sonar64: Sonar64 { Sonar64(client: self) }
+    /// Monitor64: hosts and services with thresholds, problems, notification, maintenance, agent and cluster.
+    public var monitor64: Monitor64 { Monitor64(client: self) }
 
     /// Endpoints of the *Node* area.
     public struct Node: Sendable { let client: Node64 }
@@ -49,4 +51,6 @@ extension Node64 {
     public struct Honeypot: Sendable { let client: Node64 }
     /// Endpoints of the *Sonar64* area.
     public struct Sonar64: Sendable { let client: Node64 }
+    /// Endpoints of the *Monitor64* area.
+    public struct Monitor64: Sendable { let client: Node64 }
 }
